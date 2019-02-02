@@ -18,6 +18,8 @@ namespace gfx
 		AutoReleasePtr<ID3D11RenderTargetView> m_renderTargetView;
 		AutoReleasePtr<ID3D11Texture2D> m_depthBuffer;
 		AutoReleasePtr<ID3D11DepthStencilView> m_depthStencilView;
+		AutoReleasePtr<ID3D11RasterizerState> m_rasterizerWireframe;
+		AutoReleasePtr<ID3D11RasterizerState> m_rasterizerSolid;
 
 		std::function<void(float)> m_updateFunction;
 		std::function<void(UINT, WPARAM, LPARAM)> m_messageFunction;
@@ -29,10 +31,13 @@ namespace gfx
 		void CreateSwapChain(int width, int height);
 		void CreateRenderTarget(int width, int height);
 		void SetViewPort(int width, int height);
+		void CreateRasterizerStates();
 
 	public:
 		Graphics(HWND hwnd, int width, int height);
 
+		void RasterizerWireframe();
+		void RasterizerSolid();
 		void ClearScreen();
 		void ClearScreen(float r, float g, float b, float a = 1.0f);
 		void Present();

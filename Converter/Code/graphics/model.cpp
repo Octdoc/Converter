@@ -10,7 +10,7 @@ namespace gfx
 		D3D11_SUBRESOURCE_DATA subResourceData{};
 		auto device = graphics.getDevice();
 
-		m_vertexLayout = model.getVertexLayout();
+		m_modelType = model.getModelType();
 		m_vertexSizeInBytes = model.getVertexSizeInBytes();
 		m_vertexCount = model.getVertexCount();
 		m_indexCount = model.getIndexCount();

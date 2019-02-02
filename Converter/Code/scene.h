@@ -12,6 +12,7 @@ namespace cvt
 		gfx::Graphics& m_graphics;
 
 		gfx::Entity::U m_entity;
+		gfx::Entity::U m_hitbox;
 		gfx::VertexShader::P m_vs[6];
 		gfx::PixelShader::P m_ps[6];
 		gfx::CBuffer::U m_matrixBuffer;
@@ -21,12 +22,19 @@ namespace cvt
 
 		gfx::Camera m_cam;
 		mth::CamController m_camController;
+		bool m_showHitbox;
+
+	private:
+		int ModelTypeToIndex(UINT modelType);
 
 	public:
 		Scene(gfx::Graphics& graphics);
 
 		void SetEntity(gfx::ModelLoader& ml);
 		void ClearEntity();
+		void SetHitbox(gfx::ModelLoader& ml);
+		void ClearHitbox();
+		inline void ShowHitbox(bool show) { m_showHitbox = show; }
 
 		bool HandleCamera(UINT msg, WPARAM wparam, LPARAM lparam);
 		void Render();

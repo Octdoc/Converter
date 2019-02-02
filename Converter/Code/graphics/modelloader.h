@@ -13,8 +13,7 @@ namespace gfx
 	{
 		char fileFormat;	//'t' for text, 'b' for binary
 		char extension[3];	//"OMD"
-		UINT vertexLayout;
-		UINT shaderType;
+		UINT modelType;
 		UINT vertexCount;
 		UINT indexCount;
 		UINT groupCount;
@@ -38,8 +37,7 @@ namespace gfx
 		std::wstring m_filename;
 
 		UINT m_vertexSizeInBytes;
-		UINT m_vertexLayout;
-		UINT m_shaderType;
+		UINT m_modelType;
 		UINT m_boundingVolumeType;
 
 		std::vector<VertexElement> m_vertices;
@@ -53,18 +51,19 @@ namespace gfx
 		std::vector<mth::Triangle> m_hitbox;
 
 	private:
-		void Create(Vertex_PTMB vertices[], UINT vertexCount, UINT indices[], UINT indexCount, UINT shaderType);
-		void LoadAssimp(LPCWSTR filename);
-		void StoreData(const aiScene *scene);
-		void StoreMaterials(const aiScene *scene);
-		void StoreVertices(const aiScene *scene);
+		void OrganizeMaterials();
+		void Create(Vertex_PTMB vertices[], UINT vertexCount, UINT indices[], UINT indexCount, UINT modelType);
+		void LoadAssimp(LPCWSTR filename, UINT modelType);
+		void StoreData(const aiScene *scene, UINT modelType);
+		void StoreMaterials(const aiScene *scene, UINT modelType);
+		void StoreVertices(const aiScene *scene, UINT modelType);
 
 #pragma region Load OMD
 
-		void LoadOMD(LPCWSTR filename);
+		void LoadOMD(LPCWSTR filename, UINT modelType);
 
-		void LoadOMDBinary(LPCWSTR filename);
-		void ReadHeaderBinary(std::ifstream& infile, OMDHeader& header);
+		void LoadOMDBinary(LPCWSTR filename, UINT modelType);
+		void ReadHeaderBinary(std::ifstream& infile, OMDHeader& header, UINT modelType);
 		void ReadVerticesBinary(std::ifstream& infile, OMDHeader& header);
 		void ReadIndicesBinary(std::ifstream& infile, OMDHeader& header);
 		void ReadGroupsBinary(std::ifstream& infile, OMDHeader& header);
@@ -73,8 +72,8 @@ namespace gfx
 		void ReadBonesBinary(std::ifstream& infile, OMDHeader& header);
 		void ReadAnimationsBinary(std::ifstream& infile, OMDHeader& header);
 
-		void LoadOMDText(LPCWSTR filename);
-		void ReadHeaderText(std::wifstream& infile, OMDHeader& header);
+		void LoadOMDText(LPCWSTR filename, UINT modelType);
+		void ReadHeaderText(std::wifstream& infile, OMDHeader& header, UINT modelType);
 		void ReadVerticesText(std::wifstream& infile, OMDHeader& header);
 		void ReadIndicesText(std::wifstream& infile, OMDHeader& header);
 		void ReadGroupsText(std::wifstream& infile, OMDHeader& header);
@@ -87,7 +86,7 @@ namespace gfx
 
 #pragma region Export OMD
 
-		void ExportOMDBinary(UINT shaderType, LPCWSTR filename);
+		void ExportOMDBinary(LPCWSTR filename, UINT modelType);
 		void WriteHeaderBinary(std::ofstream& outfile, OMDHeader& header);
 		void WriteVerticesBinary(std::ofstream& outfile, OMDHeader& header);
 		void WriteIndicesBinary(std::ofstream& outfile, OMDHeader& header);
@@ -97,7 +96,7 @@ namespace gfx
 		void WriteBonesBinary(std::ofstream& outfile, OMDHeader& header);
 		void WriteAnimationsBinary(std::ofstream& outfile, OMDHeader& header);
 
-		void ExportOMDText(UINT shaderType, LPCWSTR filename);
+		void ExportOMDText(LPCWSTR filename, UINT modelType);
 		void WriteHeaderText(std::wofstream& outfile, OMDHeader& header);
 		void WriteVerticesText(std::wofstream& outfile, OMDHeader& header);
 		void WriteIndicesText(std::wofstream& outfile, OMDHeader& header);
@@ -111,18 +110,22 @@ namespace gfx
 
 	public:
 		ModelLoader();
-		ModelLoader(LPCWSTR filename);
+		ModelLoader(LPCWSTR filename, UINT modelType = ModelType::AllPart);
 
 		void Clear();
-		void ExportOMD(UINT shaderType, LPCWSTR filename, bool binary = true);
+		void ExportOMD(LPCWSTR filename, UINT modelType, bool binary = true);
 
-		void LoadModel(LPCWSTR filename);
-		void CreateCube(mth::float3 position, mth::float3 size, UINT shaderType);
+		void LoadModel(LPCWSTR filename, UINT modelType = ModelType::AllPart);
+		void CreateCube(mth::float3 position, mth::float3 size, UINT modelType);
 		void CreateFullScreenQuad();
 		void CreateScreenQuad(mth::float2 pos, mth::float2 size);
-		void CreateQuad(mth::float2 pos, mth::float2 size, UINT shaderType);
-		void CreateQuad(mth::float2 pos, mth::float2 size, mth::float2 tpos, mth::float2 tsize, UINT shaderType);
+		void CreateQuad(mth::float2 pos, mth::float2 size, UINT modelType);
+		void CreateQuad(mth::float2 pos, mth::float2 size, mth::float2 tpos, mth::float2 tsize, UINT modelType);
 
+		void MakeHitboxFromVertices();
+		void MakeVerticesFromHitbox();
+		bool HasHitbox();
+		void SwapHitboxes(ModelLoader& other);
 		void FlipInsideOut();
 		void Transform(mth::float4x4 transform);
 
@@ -132,14 +135,13 @@ namespace gfx
 		inline UINT getVertexCount() { return (UINT)(m_vertices.size() / (m_vertexSizeInBytes / sizeof(float))); }
 		inline UINT* getIndices() { return m_indices.data(); }
 		inline UINT getIndexCount() { return (UINT)m_indices.size(); }
-		inline UINT getVertexLayout() { return m_vertexLayout; }
-		inline UINT getShaderType() { return m_shaderType; }
+		inline UINT getModelType() { return m_modelType; }
 		inline UINT getVertexSizeInBytes() { return m_vertexSizeInBytes; }
 		inline UINT getVertexSizeInFloats() { return m_vertexSizeInBytes / sizeof(float); }
 		inline VertexGroup& getVertexGroup(UINT index) { return m_groups[index]; }
 		inline UINT getVertexGroupCount() { return (UINT)m_groups.size(); }
 		inline UINT getMaterialCount() { return (UINT)m_textureNames.size(); }
-		inline std::wstring& getTexture(UINT index) { return m_textureNames[index]; }
-		inline std::wstring& getNormalmap(UINT index) { return m_normalmapNames[index]; }
+		inline LPCWSTR getTexture(UINT index) { return (index < (UINT)m_textureNames.size()) ? m_textureNames[index].c_str() : L""; }
+		inline LPCWSTR getNormalmap(UINT index) { return (index < (UINT)m_normalmapNames.size()) ? m_normalmapNames[index].c_str() : L""; }
 	};
 }

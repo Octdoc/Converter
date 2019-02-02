@@ -14,7 +14,7 @@ namespace gfx
 		AutoReleasePtr<ID3D11Buffer> m_indexBuffer;
 
 		UINT m_vertexSizeInBytes;
-		UINT m_vertexLayout;
+		UINT m_modelType;
 		UINT m_vertexCount;
 		UINT m_indexCount;
 

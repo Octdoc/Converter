@@ -37,235 +37,139 @@ namespace gfx
 
 #pragma endregion
 
-#pragma region VertexLayout
+#pragma region ModelType
 
-	VertexLayout::VertexLayout(Value value) :m_value(value) {}
-	bool VertexLayout::operator==(Value value)
+	namespace ModelType
 	{
-		return m_value == value;
-	}
-	bool VertexLayout::operator!=(Value value)
-	{
-		return m_value != value;
-	}
-	VertexLayout::operator UINT()
-	{
-		return (UINT)m_value;
-	}
-	bool VertexLayout::HasPositions(UINT vertexLayout)
-	{
-		return (bool)(vertexLayout & Value::POSITION);
-	}
-	bool VertexLayout::HasTexcoords(UINT vertexLayout)
-	{
-		return (bool)(vertexLayout & Value::TEXCOORD);
-	}
-	bool VertexLayout::HasNormals(UINT vertexLayout)
-	{
-		return (bool)(vertexLayout & Value::NORMAL);
-	}
-	bool VertexLayout::HasTangentsBinormals(UINT vertexLayout)
-	{
-		return (bool)(vertexLayout & Value::TANGENT_BINORMAL);
-	}
-	bool VertexLayout::HasBones(UINT vertexLayout)
-	{
-		return (bool)(vertexLayout & Value::BONE);
-	}
-	UINT VertexLayout::VertexSizeInBytes(UINT vertexLayout)
-	{
-		return VertexSizeInVertexElements(vertexLayout) * sizeof(VertexElement);
-	}
-	UINT VertexLayout::VertexSizeInVertexElements(UINT vertexLayout)
-	{
-		UINT size = 0;
-		if (HasPositions(vertexLayout))
-			size += 3;
-		if (HasTexcoords(vertexLayout))
-			size += 2;
-		if (HasNormals(vertexLayout))
-			size += 3;
-		if (HasTangentsBinormals(vertexLayout))
-			size += 6;
-		if (HasBones(vertexLayout))
-			size += 8;
-		return size;
-	}
-	UINT VertexLayout::PositionOffset(UINT vertexLayout)
-	{
-		UINT offset = 0;
-		return offset;
-	}
-	UINT VertexLayout::TexCoordOffset(UINT vertexLayout)
-	{
-		UINT offset = 0;
-		if (HasPositions(vertexLayout))
-			offset += 3;
-		return offset;
-	}
-	UINT VertexLayout::NormalOffset(UINT vertexLayout)
-	{
-		UINT offset = 0;
-		if (HasPositions(vertexLayout))
-			offset += 3;
-		if (HasTexcoords(vertexLayout))
-			offset += 2;
-		return offset;
-	}
-	UINT VertexLayout::TangentOffset(UINT vertexLayout)
-	{
-		UINT offset = 0;
-		if (HasPositions(vertexLayout))
-			offset += 3;
-		if (HasTexcoords(vertexLayout))
-			offset += 2;
-		if (HasNormals(vertexLayout))
-			offset += 3;
-		return offset;
-	}
-	UINT VertexLayout::BinormalOffset(UINT vertexLayout)
-	{
-		UINT offset = 0;
-		if (HasPositions(vertexLayout))
-			offset += 3;
-		if (HasTexcoords(vertexLayout))
-			offset += 2;
-		if (HasNormals(vertexLayout))
-			offset += 3;
-		if (HasTangentsBinormals(vertexLayout))
-			offset += 3;
-		return offset;
-	}
-	UINT VertexLayout::BoneWeightsOffset(UINT vertexLayout)
-	{
-		UINT offset = 0;
-		if (HasPositions(vertexLayout))
-			offset += 3;
-		if (HasTexcoords(vertexLayout))
-			offset += 2;
-		if (HasNormals(vertexLayout))
-			offset += 3;
-		if (HasTangentsBinormals(vertexLayout))
-			offset += 6;
-		return offset;
-	}
-	UINT VertexLayout::BoneIndexOffset(UINT vertexLayout)
-	{
-		UINT offset = 0;
-		if (HasPositions(vertexLayout))
-			offset += 3;
-		if (HasTexcoords(vertexLayout))
-			offset += 2;
-		if (HasNormals(vertexLayout))
-			offset += 3;
-		if (HasTangentsBinormals(vertexLayout))
-			offset += 6;
-		if (HasBones(vertexLayout))
-			offset += 4;
-		return offset;
-	}
-
-#pragma endregion
-
-#pragma region MaterialType
-
-	ShaderType::ShaderType() :m_value(Value::ERROR_TYPE) {}
-	ShaderType::ShaderType(Value value) : m_value(value) {}
-	ShaderType ShaderType::operator=(Value value)
-	{
-		m_value = value;
-		return value;
-	}
-	bool ShaderType::operator==(Value value)
-	{
-		return m_value == value;
-	}
-	bool ShaderType::operator!=(Value value)
-	{
-		return m_value != value;
-	}
-	ShaderType::operator UINT()
-	{
-		return (UINT)m_value;
-	}
-	bool ShaderType::HasPositions(UINT shaderType)
-	{
-		return shaderType != Value::ERROR_TYPE;
-	}
-	bool ShaderType::HasTexture(UINT shaderType)
-	{
-		return
-			shaderType == Value::PT ||
-			shaderType == Value::PTN ||
-			shaderType == Value::PTM ||
-			shaderType == Value::PTB ||
-			shaderType == Value::PTNB ||
-			shaderType == Value::PTMB;
-	}
-	bool ShaderType::HasNormals(UINT shaderType)
-	{
-		return
-			shaderType == Value::PN ||
-			shaderType == Value::PTN ||
-			shaderType == Value::PM ||
-			shaderType == Value::PTM ||
-			shaderType == Value::PNB ||
-			shaderType == Value::PTNB ||
-			shaderType == Value::PMB ||
-			shaderType == Value::PTMB;
-	}
-	bool ShaderType::HasNormalmap(UINT shaderType)
-	{
-		return
-			shaderType == Value::PM ||
-			shaderType == Value::PTM ||
-			shaderType == Value::PMB ||
-			shaderType == Value::PTMB;
-	}
-	bool ShaderType::HasBones(UINT shaderType)
-	{
-		return
-			shaderType == Value::PB ||
-			shaderType == Value::PTB ||
-			shaderType == Value::PNB ||
-			shaderType == Value::PTNB ||
-			shaderType == Value::PMB ||
-			shaderType == Value::PTMB;
-	}
-	UINT ShaderType::ToVertexLayout(UINT shaderType)
-	{
-		UINT vertexLayout[] = {
-			0,
-			VertexLayout::POSITION,
-			VertexLayout::POSITION | VertexLayout::TEXCOORD,
-			VertexLayout::POSITION | VertexLayout::NORMAL,
-			VertexLayout::POSITION | VertexLayout::TEXCOORD | VertexLayout::NORMAL,
-			VertexLayout::POSITION | VertexLayout::TEXCOORD | VertexLayout::NORMAL | VertexLayout::TANGENT_BINORMAL,
-			VertexLayout::POSITION | VertexLayout::TEXCOORD | VertexLayout::NORMAL | VertexLayout::TANGENT_BINORMAL,
-			VertexLayout::POSITION | VertexLayout::BONE,
-			VertexLayout::POSITION | VertexLayout::TEXCOORD | VertexLayout::BONE,
-			VertexLayout::POSITION | VertexLayout::NORMAL | VertexLayout::BONE,
-			VertexLayout::POSITION | VertexLayout::TEXCOORD | VertexLayout::NORMAL | VertexLayout::BONE,
-			VertexLayout::POSITION | VertexLayout::TEXCOORD | VertexLayout::NORMAL | VertexLayout::TANGENT_BINORMAL | VertexLayout::BONE,
-			VertexLayout::POSITION | VertexLayout::TEXCOORD | VertexLayout::NORMAL | VertexLayout::TANGENT_BINORMAL | VertexLayout::BONE
-		};
-		return vertexLayout[shaderType];
-	}
-	UINT ShaderType::ToShaderType(bool p, bool t, bool n, bool m, bool b)
-	{
-		if (p && !t && !n && !m)
-			return b ? PB : P;
-		if (p && t && !n && !m)
-			return b ? PTB : PT;
-		if (p && !t && n && !m)
-			return b ? PNB : PN;
-		if (p && t && n && !m)
-			return b ? PTNB : PTN;
-		if (p && !t && n && m)
-			return b ? PMB : PM;
-		if (p && t && n && m)
-			return b ? PTMB : PTM;
-		return ERROR_TYPE;
+		UINT VertexSizeInBytes(UINT modelType)
+		{
+			return VertexSizeInVertexElements(modelType) * sizeof(VertexElement);
+		}
+		UINT VertexSizeInVertexElements(UINT modelType)
+		{
+			UINT size = 0;
+			if (HasPositions(modelType))
+				size += 3;
+			if (HasTexcoords(modelType))
+				size += 2;
+			if (HasNormals(modelType))
+				size += 3;
+			if (HasTangentsBinormals(modelType))
+				size += 6;
+			if (HasBones(modelType))
+				size += 8;
+			return size;
+		}
+		UINT PositionOffset(UINT modelType)
+		{
+			UINT offset = 0;
+			return offset;
+		}
+		UINT TexCoordOffset(UINT modelType)
+		{
+			UINT offset = 0;
+			if (HasPositions(modelType))
+				offset += 3;
+			return offset;
+		}
+		UINT NormalOffset(UINT modelType)
+		{
+			UINT offset = 0;
+			if (HasPositions(modelType))
+				offset += 3;
+			if (HasTexcoords(modelType))
+				offset += 2;
+			return offset;
+		}
+		UINT TangentOffset(UINT modelType)
+		{
+			UINT offset = 0;
+			if (HasPositions(modelType))
+				offset += 3;
+			if (HasTexcoords(modelType))
+				offset += 2;
+			if (HasNormals(modelType))
+				offset += 3;
+			return offset;
+		}
+		UINT BinormalOffset(UINT modelType)
+		{
+			UINT offset = 0;
+			if (HasPositions(modelType))
+				offset += 3;
+			if (HasTexcoords(modelType))
+				offset += 2;
+			if (HasNormals(modelType))
+				offset += 3;
+			if (HasTangentsBinormals(modelType))
+				offset += 3;
+			return offset;
+		}
+		UINT BoneWeightsOffset(UINT modelType)
+		{
+			UINT offset = 0;
+			if (HasPositions(modelType))
+				offset += 3;
+			if (HasTexcoords(modelType))
+				offset += 2;
+			if (HasNormals(modelType))
+				offset += 3;
+			if (HasTangentsBinormals(modelType))
+				offset += 6;
+			return offset;
+		}
+		UINT BoneIndexOffset(UINT modelType)
+		{
+			UINT offset = 0;
+			if (HasPositions(modelType))
+				offset += 3;
+			if (HasTexcoords(modelType))
+				offset += 2;
+			if (HasNormals(modelType))
+				offset += 3;
+			if (HasTangentsBinormals(modelType))
+				offset += 6;
+			if (HasBones(modelType))
+				offset += 4;
+			return offset;
+		}
+		UINT RemoveUnnecessary(UINT modelType)
+		{
+			if (!(modelType & Part::POSITION))
+				return 0;
+			if (!(modelType & Part::TEXCOORD))
+				modelType &= ~(Part::TEXTURE | Part::NORMALMAP);
+			if (!(modelType & Part::NORMAL))
+				modelType &= ~(Part::TANGENT_BINORMAL | Part::NORMALMAP);
+			if (!(modelType & Part::TANGENT_BINORMAL))
+				modelType &= ~Part::NORMALMAP;
+			if (!(modelType & Part::NORMALMAP))
+			{
+				modelType &= ~Part::TANGENT_BINORMAL;
+				if (!Part::TEXTURE)
+					modelType &= ~Part::TEXCOORD;
+			}
+			return modelType;
+		}
+		UINT ToModelType(bool position, bool texcoord, bool normal, bool tangent_binormal, bool bone, bool texture, bool normalmap)
+		{
+			UINT modelType = 0;
+			if (position)
+				modelType |= Part::POSITION;
+			if (texcoord)
+				modelType |= Part::TEXCOORD;
+			if (normal)
+				modelType |= Part::NORMAL;
+			if (tangent_binormal)
+				modelType |= Part::TANGENT_BINORMAL;
+			if (bone)
+				modelType |= Part::BONE;
+			if (texture)
+				modelType |= Part::TEXTURE;
+			if (normalmap)
+				modelType |= Part::NORMALMAP;
+			return modelType;
+		}
 	}
 
 #pragma endregion

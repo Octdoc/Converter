@@ -14,79 +14,51 @@ namespace gfx
 		int materialIndex;
 	};
 
-	class VertexLayout
+	namespace ModelType
 	{
-	public:
-		enum Value {
+		enum Part :UINT {
 			POSITION = 1 << 0,
 			TEXCOORD = 1 << 1,
 			NORMAL = 1 << 2,
 			TANGENT_BINORMAL = 1 << 3,
-			BONE = 1 << 4
+			BONE = 1 << 4,
+			TEXTURE = 1 << 5,
+			NORMALMAP = 1 << 6
 		};
 
-	private:
-		Value m_value;
+		const UINT P = POSITION;
+		const UINT PT = POSITION | TEXCOORD | TEXTURE;
+		const UINT PN = POSITION | NORMAL;
+		const UINT PTN = POSITION | TEXCOORD | NORMAL | TEXTURE;
+		const UINT PM = POSITION | TEXCOORD | NORMAL | TANGENT_BINORMAL | NORMALMAP;
+		const UINT PTM = POSITION | TEXCOORD | NORMAL | TANGENT_BINORMAL | TEXTURE | NORMALMAP;
+		const UINT PB = POSITION | BONE;
+		const UINT PTB = POSITION | TEXCOORD | TEXTURE | BONE;
+		const UINT PNB = POSITION | NORMAL | BONE;
+		const UINT PTNB = POSITION | TEXCOORD | NORMAL | TEXTURE | BONE;
+		const UINT PMB = POSITION | TEXCOORD | NORMAL | TANGENT_BINORMAL | NORMALMAP | BONE;
+		const UINT PTMB = POSITION | TEXCOORD | NORMAL | TANGENT_BINORMAL | TEXTURE | NORMALMAP | BONE;
+		const UINT AllPart = POSITION | TEXCOORD | NORMAL | TANGENT_BINORMAL | TEXTURE | NORMALMAP | BONE;
 
-	public:
-		VertexLayout(Value value);
-		bool operator==(Value value);
-		bool operator!=(Value value);
-		operator UINT();
-
-		static bool HasPositions(UINT vertexLayout);
-		static bool HasTexcoords(UINT vertexLayout);
-		static bool HasNormals(UINT vertexLayout);
-		static bool HasTangentsBinormals(UINT vertexLayout);
-		static bool HasBones(UINT vertexLayout);
-		static UINT VertexSizeInBytes(UINT vertexLayout);
-		static UINT VertexSizeInVertexElements(UINT vertexLayout);
-		static UINT PositionOffset(UINT vertexLayout);
-		static UINT TexCoordOffset(UINT vertexLayout);
-		static UINT NormalOffset(UINT vertexLayout);
-		static UINT TangentOffset(UINT vertexLayout);
-		static UINT BinormalOffset(UINT vertexLayout);
-		static UINT BoneWeightsOffset(UINT vertexLayout);
-		static UINT BoneIndexOffset(UINT vertexLayout);
-	};
-
-	class ShaderType
-	{
-	public:
-		enum Value {
-			ERROR_TYPE = 0,
-			P = 1,
-			PT = 2,
-			PN = 3,
-			PTN = 4,
-			PM = 5,
-			PTM = 6,
-			PB = 7,
-			PTB = 8,
-			PNB = 9,
-			PTNB = 10,
-			PMB = 11,
-			PTMB = 12
-		};
-
-	private:
-		Value m_value;
-
-	public:
-		ShaderType();
-		ShaderType(Value value);
-		ShaderType operator=(Value value);
-		bool operator==(Value value);
-		bool operator!=(Value value);
-		operator UINT();
-
-		static bool HasPositions(UINT shaderType);
-		static bool HasTexture(UINT shaderType);
-		static bool HasNormals(UINT shaderType);
-		static bool HasNormalmap(UINT shaderType);
-		static bool HasBones(UINT shaderType);
-		static UINT ToVertexLayout(UINT shaderType);
-		static UINT ToShaderType(bool p, bool t, bool n, bool m, bool b);
+		inline bool HasPositions(UINT modelType) { return (bool)(modelType & Part::POSITION); }
+		inline bool HasTexcoords(UINT modelType) { return (bool)(modelType & Part::TEXCOORD); }
+		inline bool HasNormals(UINT modelType) { return (bool)(modelType & Part::NORMAL); }
+		inline bool HasTangentsBinormals(UINT modelType) { return (bool)(modelType & Part::TANGENT_BINORMAL); }
+		inline bool HasBones(UINT modelType) { return (bool)(modelType & Part::BONE); }
+		inline bool HasTexture(UINT modelType) { return (bool)(modelType & Part::TEXTURE); }
+		inline bool HasNormalmap(UINT modelType) { return (bool)(modelType & Part::NORMALMAP); }
+		UINT VertexSizeInBytes(UINT modelType);
+		UINT VertexSizeInVertexElements(UINT modelType);
+		UINT PositionOffset(UINT modelType);
+		UINT TexCoordOffset(UINT modelType);
+		UINT NormalOffset(UINT modelType);
+		UINT TangentOffset(UINT modelType);
+		UINT BinormalOffset(UINT modelType);
+		UINT BoneWeightsOffset(UINT modelType);
+		UINT BoneIndexOffset(UINT modelType);
+		UINT RemoveUnnecessary(UINT modelType);
+		UINT ToModelType(bool position, bool texcoord, bool normal, bool tangent_binormal, bool bone, bool texture, bool normalmap);
+		inline UINT VertexLayout(UINT modelType) { return modelType & (Part::POSITION | Part::TEXCOORD | Part::NORMAL | Part::TANGENT_BINORMAL | Part::BONE); }
 	};
 
 #pragma region Vertex structs
@@ -197,5 +169,4 @@ namespace gfx
 	};
 
 #pragma endregion
-
 }

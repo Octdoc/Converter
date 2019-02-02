@@ -8,6 +8,7 @@ namespace gfx
 		CreateSwapChain(width, height);
 		CreateRenderTarget(width, height);
 		SetViewPort(width, height);
+		CreateRasterizerStates();
 	}
 	void Graphics::CreateDevice()
 	{
@@ -102,10 +103,44 @@ namespace gfx
 		vp.MaxDepth = 1.0f;
 		m_context->RSSetViewports(1, &vp);
 	}
+	void Graphics::CreateRasterizerStates()
+	{
+		HRESULT hr;
+		D3D11_RASTERIZER_DESC rd{};
+		rd.AntialiasedLineEnable = true;
+		rd.CullMode = D3D11_CULL_NONE;
+		rd.DepthBias = 0;
+		rd.DepthBiasClamp = 0.0f;
+		rd.DepthClipEnable = true;
+		rd.FrontCounterClockwise = false;
+		rd.MultisampleEnable = true;
+		rd.ScissorEnable = false;
+		rd.SlopeScaledDepthBias = 0.0f;
+
+		rd.FillMode = D3D11_FILL_SOLID;
+		hr = m_device->CreateRasterizerState(&rd, &m_rasterizerSolid);
+		if (FAILED(hr))
+			throw std::exception("Failed to create rasterizer state");
+
+		rd.FillMode = D3D11_FILL_WIREFRAME;
+		hr = m_device->CreateRasterizerState(&rd, &m_rasterizerWireframe);
+		if (FAILED(hr))
+			throw std::exception("Failed to create rasterizer state");
+
+		m_context->RSSetState(m_rasterizerSolid);
+	}
 	Graphics::Graphics(HWND hwnd, int width, int height) :
 		m_hwnd(hwnd)
 	{
 		InitGraphics(width, height);
+	}
+	void Graphics::RasterizerWireframe()
+	{
+		m_context->RSSetState(m_rasterizerWireframe);
+	}
+	void Graphics::RasterizerSolid()
+	{
+		m_context->RSSetState(m_rasterizerSolid);
 	}
 	void Graphics::ClearScreen()
 	{

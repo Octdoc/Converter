@@ -2,8 +2,8 @@
 
 namespace gfx
 {
-	VertexShader::VertexShader(Graphics& graphics, LPCWSTR shaderFileName, UINT vertexLayout) :
-		m_vertexLayout(vertexLayout)
+	VertexShader::VertexShader(Graphics& graphics, LPCWSTR shaderFileName, UINT modelType) :
+		m_modelType(modelType)
 	{
 		auto device = graphics.getDevice();
 		AutoReleasePtr<ID3DBlob> shaderBuffer = LoadShaderCode(shaderFileName); 
@@ -15,18 +15,18 @@ namespace gfx
 		if (FAILED(hr))
 			throw std::exception("Failed to create vertex shader.");
 		
-		if (VertexLayout::HasPositions(m_vertexLayout))
+		if (ModelType::HasPositions(m_modelType))
 			inputLayoutDesc[counter++] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 };
-		if (VertexLayout::HasTexcoords(m_vertexLayout))
+		if (ModelType::HasTexcoords(m_modelType))
 			inputLayoutDesc[counter++] = { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
-		if (VertexLayout::HasNormals(m_vertexLayout))
+		if (ModelType::HasNormals(m_modelType))
 			inputLayoutDesc[counter++] = { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
-		if (VertexLayout::HasTangentsBinormals(m_vertexLayout))
+		if (ModelType::HasTangentsBinormals(m_modelType))
 		{
 			inputLayoutDesc[counter++] = { "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
 			inputLayoutDesc[counter++] = { "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
 		}
-		if (VertexLayout::HasBones(m_vertexLayout))
+		if (ModelType::HasBones(m_modelType))
 		{
 			inputLayoutDesc[counter++] = { "BONEWEIGHTS", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
 			inputLayoutDesc[counter++] = { "BONEINDEX", 0, DXGI_FORMAT_R32G32B32A32_UINT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };

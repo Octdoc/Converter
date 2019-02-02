@@ -7,34 +7,46 @@
 
 namespace gfx
 {
-	void ModelLoader::Create(Vertex_PTMB vertices[], UINT vertexCount, UINT indices[], UINT indexCount, UINT shaderType)
+	void ModelLoader::OrganizeMaterials()
+	{
+		std::vector<std::wstring> textureNames, normalmapNames;
+		for (UINT i = 0; i < (UINT)m_groups.size(); i++)
+		{
+			textureNames.push_back(m_textureNames[m_groups[i].materialIndex]);
+			normalmapNames.push_back(m_normalmapNames[m_groups[i].materialIndex]);
+			m_groups[i].materialIndex = i;
+		}
+		m_textureNames.swap(textureNames);
+		m_normalmapNames.swap(normalmapNames);
+	}
+
+	void ModelLoader::Create(Vertex_PTMB vertices[], UINT vertexCount, UINT indices[], UINT indexCount, UINT modelType)
 	{
 		int counter = 0;
-		m_shaderType = shaderType;
-		m_vertexLayout = ShaderType::ToVertexLayout(shaderType);
-		m_vertexSizeInBytes = VertexLayout::VertexSizeInBytes(m_vertexLayout);
+		m_modelType = modelType;
+		m_vertexSizeInBytes = ModelType::VertexSizeInBytes(m_modelType);
 		m_vertices.resize(vertexCount*getVertexSizeInFloats());
 		m_indices.resize(indexCount);
 		for (UINT v = 0; v < vertexCount; v++)
 		{
-			if (VertexLayout::HasPositions(m_vertexLayout))
+			if (ModelType::HasPositions(modelType))
 			{
 				m_vertices[counter++] = vertices[v].position.x;
 				m_vertices[counter++] = vertices[v].position.y;
 				m_vertices[counter++] = vertices[v].position.z;
 			}
-			if (VertexLayout::HasTexcoords(m_vertexLayout))
+			if (ModelType::HasTexcoords(modelType))
 			{
 				m_vertices[counter++] = vertices[v].texcoord.x;
 				m_vertices[counter++] = vertices[v].texcoord.y;
 			}
-			if (VertexLayout::HasNormals(m_vertexLayout))
+			if (ModelType::HasNormals(modelType))
 			{
 				m_vertices[counter++] = vertices[v].normal.x;
 				m_vertices[counter++] = vertices[v].normal.y;
 				m_vertices[counter++] = vertices[v].normal.z;
 			}
-			if (VertexLayout::HasTangentsBinormals(m_vertexLayout))
+			if (ModelType::HasTangentsBinormals(modelType))
 			{
 				m_vertices[counter++] = vertices[v].tangent.x;
 				m_vertices[counter++] = vertices[v].tangent.y;
@@ -43,7 +55,7 @@ namespace gfx
 				m_vertices[counter++] = vertices[v].binormal.y;
 				m_vertices[counter++] = vertices[v].binormal.z;
 			}
-			if (VertexLayout::HasBones(m_vertexLayout))
+			if (ModelType::HasBones(modelType))
 			{
 				m_vertices[counter++] = vertices[v].boneWeights[0];
 				m_vertices[counter++] = vertices[v].boneWeights[1];
@@ -62,7 +74,7 @@ namespace gfx
 		m_normalmapNames.push_back(L"");
 	}
 
-	void ModelLoader::LoadAssimp(LPCWSTR filename)
+	void ModelLoader::LoadAssimp(LPCWSTR filename, UINT modelType)
 	{
 		Assimp::Importer importer;
 		const aiScene* scene = importer.ReadFile(ToStr(filename).c_str(),
@@ -75,15 +87,15 @@ namespace gfx
 			//auto error = importer.GetErrorString();
 			throw std::exception("Import failed");
 		}
-		StoreData(scene);
+		StoreData(scene, modelType);
 	}
 
 #pragma region Load assimp
 
-	void ModelLoader::StoreData(const aiScene *scene)
+	void ModelLoader::StoreData(const aiScene *scene, UINT modelType)
 	{
-		StoreMaterials(scene);
-		StoreVertices(scene);
+		StoreMaterials(scene, modelType);
+		StoreVertices(scene, modelType);
 	}
 
 	std::wstring FolderlessFilename(LPCSTR filename)
@@ -97,13 +109,12 @@ namespace gfx
 			str += (WCHAR)filename[i];
 		return str;
 	}
-	void ModelLoader::StoreMaterials(const aiScene *scene)
+	void ModelLoader::StoreMaterials(const aiScene *scene, UINT modelType)
 	{
 		m_textureNames.resize(scene->mNumMaterials);
-		m_normalmapNames.resize(scene->mNumMaterials);
 		for (UINT i = 1; i < scene->mNumMaterials; i++)
 		{
-			if (scene->mMaterials[i]->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+			if (ModelType::HasTexture(modelType) && scene->mMaterials[i]->GetTextureCount(aiTextureType_DIFFUSE) > 0)
 			{
 				aiString path;
 				scene->mMaterials[i]->GetTexture(aiTextureType_DIFFUSE, 0, &path);
@@ -111,7 +122,12 @@ namespace gfx
 			}
 			else
 				m_textureNames[i] = L"";
-			if (scene->mMaterials[i]->GetTextureCount(aiTextureType_NORMALS) > 0)
+		}
+
+		m_normalmapNames.resize(scene->mNumMaterials);
+		for (UINT i = 1; i < scene->mNumMaterials; i++)
+		{
+			if (ModelType::HasNormalmap(modelType) && scene->mMaterials[i]->GetTextureCount(aiTextureType_NORMALS) > 0)
 			{
 				aiString path;
 				scene->mMaterials[i]->GetTexture(aiTextureType_NORMALS, 0, &path);
@@ -121,8 +137,7 @@ namespace gfx
 				m_normalmapNames[i] = L"";
 		}
 	}
-
-	void ModelLoader::StoreVertices(const aiScene *scene)
+	void ModelLoader::StoreVertices(const aiScene *scene, UINT modelType)
 	{
 		m_groups.resize(scene->mNumMeshes);
 		UINT vertexCount = 0;
@@ -130,13 +145,14 @@ namespace gfx
 		for (UINT m = 0; m < scene->mNumMeshes; m++)
 		{
 			aiMesh *mesh = scene->mMeshes[m];
-			m_shaderType = ShaderType::ToShaderType(
+			m_modelType |= ModelType::ToModelType(
 				mesh->HasPositions(),
-				mesh->HasTextureCoords(0) && m_textureNames[mesh->mMaterialIndex] != L"",
+				mesh->HasTextureCoords(0),
 				mesh->HasNormals(),
-				mesh->HasTextureCoords(0) && mesh->HasTangentsAndBitangents() && m_normalmapNames[mesh->mMaterialIndex] != L"",
-				mesh->HasBones());
-			m_vertexLayout = ShaderType::ToVertexLayout(m_shaderType);
+				mesh->HasTangentsAndBitangents(),
+				mesh->HasBones(),
+				scene->mMaterials[mesh->mMaterialIndex]->GetTextureCount(aiTextureType_DIFFUSE) > 0,
+				scene->mMaterials[mesh->mMaterialIndex]->GetTextureCount(aiTextureType_NORMALS) > 0);
 			m_groups[m].startIndex = indexCount;
 			m_groups[m].materialIndex = mesh->mMaterialIndex;
 			vertexCount += scene->mMeshes[m]->mNumVertices;
@@ -144,7 +160,8 @@ namespace gfx
 				indexCount += scene->mMeshes[m]->mFaces[ii].mNumIndices;
 			m_groups[m].indexCount = indexCount - m_groups[m].startIndex;
 		}
-		m_vertexSizeInBytes = VertexLayout::VertexSizeInBytes(m_vertexLayout);
+		m_modelType = ModelType::RemoveUnnecessary(m_modelType & modelType);
+		m_vertexSizeInBytes = ModelType::VertexSizeInBytes(m_modelType);
 		m_vertices.resize(vertexCount*m_vertexSizeInBytes / sizeof(VertexElement));
 		m_indices.resize(indexCount);
 
@@ -157,24 +174,24 @@ namespace gfx
 
 			for (UINT v = 0; v < mesh->mNumVertices; v++)
 			{
-				if (VertexLayout::HasPositions(m_vertexLayout))
+				if (ModelType::HasPositions(m_modelType))
 				{
 					m_vertices[vertexCounter++] = mesh->mVertices[v].x;
 					m_vertices[vertexCounter++] = mesh->mVertices[v].y;
 					m_vertices[vertexCounter++] = -mesh->mVertices[v].z;
 				}
-				if (VertexLayout::HasTexcoords(m_vertexLayout))
+				if (ModelType::HasTexcoords(m_modelType))
 				{
 					m_vertices[vertexCounter++] = mesh->mTextureCoords[0][v].x;
 					m_vertices[vertexCounter++] = 1.0f - mesh->mTextureCoords[0][v].y;
 				}
-				if (VertexLayout::HasNormals(m_vertexLayout))
+				if (ModelType::HasNormals(m_modelType))
 				{
 					m_vertices[vertexCounter++] = mesh->mNormals[v].x;
 					m_vertices[vertexCounter++] = mesh->mNormals[v].y;
 					m_vertices[vertexCounter++] = -mesh->mNormals[v].z;
 				}
-				if (VertexLayout::HasTangentsBinormals(m_vertexLayout))
+				if (ModelType::HasTangentsBinormals(m_modelType))
 				{
 					m_vertices[vertexCounter++] = mesh->mTangents[v].x;
 					m_vertices[vertexCounter++] = mesh->mTangents[v].y;
@@ -183,7 +200,7 @@ namespace gfx
 					m_vertices[vertexCounter++] = -mesh->mBitangents[v].y;
 					m_vertices[vertexCounter++] = mesh->mBitangents[v].z;
 				}
-				if (VertexLayout::HasBones(m_vertexLayout))
+				if (ModelType::HasBones(m_modelType))
 				{
 					m_vertices[vertexCounter++] = 0.0f;
 					m_vertices[vertexCounter++] = 0.0f;
@@ -211,7 +228,7 @@ namespace gfx
 
 #pragma endregion
 
-	void ModelLoader::LoadOMD(LPCWSTR filename)
+	void ModelLoader::LoadOMD(LPCWSTR filename, UINT modelType)
 	{
 		std::ifstream infile(filename, std::ios::in | std::ios::binary);
 		if (!infile.good())
@@ -224,20 +241,20 @@ namespace gfx
 			(filedata[3] != 'd' && filedata[3] != 'D'))
 			throw std::exception(std::string("Corrupted file: " + ToStr(filename)).c_str());
 		if (filedata[0] == 't' || filedata[0] == 'T')
-			LoadOMDText(filename);
+			LoadOMDText(filename, modelType);
 		else if (filedata[0] == 'b' || filedata[0] == 'B')
-			LoadOMDBinary(filename);
+			LoadOMDBinary(filename, modelType);
 		else
 			throw std::exception(std::string("Corrupted file: " + ToStr(filename)).c_str());
 	}
 
 #pragma region Load binary
 
-	void ModelLoader::LoadOMDBinary(LPCWSTR filename)
+	void ModelLoader::LoadOMDBinary(LPCWSTR filename, UINT modelType)
 	{
 		std::ifstream infile(filename, std::ios::in | std::ios::binary);
 		OMDHeader header;
-		ReadHeaderBinary(infile, header);
+		ReadHeaderBinary(infile, header, modelType);
 		ReadVerticesBinary(infile, header);
 		ReadIndicesBinary(infile, header);
 		ReadGroupsBinary(infile, header);
@@ -246,17 +263,83 @@ namespace gfx
 		ReadBonesBinary(infile, header);
 		ReadAnimationsBinary(infile, header);
 	}
-	void ModelLoader::ReadHeaderBinary(std::ifstream& infile, OMDHeader& header)
+	void ModelLoader::ReadHeaderBinary(std::ifstream& infile, OMDHeader& header, UINT modelType)
 	{
 		infile.read((char*)&header, sizeof(header));
-		m_vertexLayout = header.vertexLayout;
-		m_vertexSizeInBytes = VertexLayout::VertexSizeInBytes(m_vertexLayout);
-		m_shaderType = header.shaderType;
+		m_modelType = ModelType::RemoveUnnecessary(header.modelType & modelType);
+		m_vertexSizeInBytes = ModelType::VertexSizeInBytes(m_modelType);
+		m_boundingVolumeType = header.boundingVolumePrimitive;
 	}
 	void ModelLoader::ReadVerticesBinary(std::ifstream& infile, OMDHeader& header)
 	{
 		m_vertices.resize(header.vertexCount*m_vertexSizeInBytes / sizeof(VertexElement));
-		infile.read((char*)m_vertices.data(), header.vertexCount*m_vertexSizeInBytes);
+		if (ModelType::VertexLayout(m_modelType) == ModelType::VertexLayout(header.modelType))
+			infile.read((char*)m_vertices.data(), header.vertexCount*m_vertexSizeInBytes);
+		else
+		{
+			VertexElement tmp[8];
+			UINT vertexCounter = 0;
+			for (UINT i = 0; i < header.vertexCount; i++)
+			{
+				if (ModelType::HasPositions(header.modelType))
+				{
+					infile.read((char*)tmp, 3 * sizeof(VertexElement));
+					if (ModelType::HasPositions(m_modelType))
+					{
+						m_vertices[vertexCounter++] = tmp[0];
+						m_vertices[vertexCounter++] = tmp[1];
+						m_vertices[vertexCounter++] = tmp[2];
+					}
+				}
+				if (ModelType::HasTexcoords(header.modelType))
+				{
+					infile.read((char*)tmp, 2 * sizeof(VertexElement));
+					if (ModelType::HasTexcoords(m_modelType))
+					{
+						m_vertices[vertexCounter++] = tmp[0];
+						m_vertices[vertexCounter++] = tmp[1];
+					}
+				}
+				if (ModelType::HasNormals(header.modelType))
+				{
+					infile.read((char*)tmp, 3 * sizeof(VertexElement));
+					if (ModelType::HasNormals(m_modelType))
+					{
+						m_vertices[vertexCounter++] = tmp[0];
+						m_vertices[vertexCounter++] = tmp[1];
+						m_vertices[vertexCounter++] = tmp[2];
+					}
+				}
+				if (ModelType::HasTangentsBinormals(header.modelType))
+				{
+					infile.read((char*)tmp, 6 * sizeof(VertexElement));
+					if (ModelType::HasTangentsBinormals(m_modelType))
+					{
+						m_vertices[vertexCounter++] = tmp[0];
+						m_vertices[vertexCounter++] = tmp[1];
+						m_vertices[vertexCounter++] = tmp[2];
+						m_vertices[vertexCounter++] = tmp[3];
+						m_vertices[vertexCounter++] = tmp[4];
+						m_vertices[vertexCounter++] = tmp[5];
+					}
+				}
+				if (ModelType::HasBones(header.modelType))
+				{
+					infile.read((char*)tmp, 8 * sizeof(VertexElement));
+					if (ModelType::HasBones(m_modelType))
+					{
+						m_vertices[vertexCounter++] = tmp[0];
+						m_vertices[vertexCounter++] = tmp[1];
+						m_vertices[vertexCounter++] = tmp[2];
+						m_vertices[vertexCounter++] = tmp[3];
+						m_vertices[vertexCounter++] = tmp[4];
+						m_vertices[vertexCounter++] = tmp[5];
+						m_vertices[vertexCounter++] = tmp[6];
+						m_vertices[vertexCounter++] = tmp[7];
+					}
+				}
+			}
+		}
 	}
 	void ModelLoader::ReadIndicesBinary(std::ifstream& infile, OMDHeader& header)
 	{
@@ -278,13 +361,15 @@ namespace gfx
 			infile.read((char*)&ch, sizeof(WCHAR));
 			while (ch)
 			{
-				m_textureNames[i] += ch;
+				if (ModelType::HasTexture(m_modelType))
+					m_textureNames[i] += ch;
 				infile.read((char*)&ch, sizeof(WCHAR));
 			}
 			infile.read((char*)&ch, sizeof(WCHAR));
 			while (ch)
 			{
-				m_normalmapNames[i] += ch;
+				if (ModelType::HasNormalmap(m_modelType))
+					m_normalmapNames[i] += ch;
 				infile.read((char*)&ch, sizeof(WCHAR));
 			}
 		}
@@ -322,11 +407,11 @@ namespace gfx
 
 #pragma region Load text
 
-	void ModelLoader::LoadOMDText(LPCWSTR filename)
+	void ModelLoader::LoadOMDText(LPCWSTR filename, UINT modelType)
 	{
 		std::wifstream infile(filename, std::ios::in);
 		OMDHeader header;
-		ReadHeaderText(infile, header);
+		ReadHeaderText(infile, header, modelType);
 		ReadVerticesText(infile, header);
 		ReadIndicesText(infile, header);
 		ReadGroupsText(infile, header);
@@ -335,7 +420,7 @@ namespace gfx
 		ReadBonesText(infile, header);
 		ReadAnimationsText(infile, header);
 	}
-	void ModelLoader::ReadHeaderText(std::wifstream& infile, OMDHeader& header)
+	void ModelLoader::ReadHeaderText(std::wifstream& infile, OMDHeader& header, UINT modelType)
 	{
 		WCHAR ch;
 		infile >> ch;
@@ -347,9 +432,7 @@ namespace gfx
 		infile >> ch;
 		header.extension[2] = (char)ch;
 		do { infile >> ch; } while (ch != ':');
-		infile >> header.vertexLayout;
-		do { infile >> ch; } while (ch != ':');
-		infile >> header.shaderType;
+		infile >> header.modelType;
 		do { infile >> ch; } while (ch != ':');
 		infile >> header.vertexCount;
 		do { infile >> ch; } while (ch != ':');
@@ -366,64 +449,92 @@ namespace gfx
 		infile >> header.boneCount;
 		do { infile >> ch; } while (ch != ':');
 		infile >> header.animationCount;
-		m_vertexLayout = header.vertexLayout;
-		m_vertexSizeInBytes = VertexLayout::VertexSizeInBytes(m_vertexLayout);
-		m_shaderType = header.shaderType;
+		m_modelType = ModelType::RemoveUnnecessary(header.modelType & modelType);
+		m_vertexSizeInBytes = ModelType::VertexSizeInBytes(m_modelType);
+		m_boundingVolumeType = header.boundingVolumePrimitive;
 	}
 	void ModelLoader::ReadVerticesText(std::wifstream& infile, OMDHeader& header)
 	{
-		bool positions = VertexLayout::HasPositions(header.vertexLayout);
-		bool texcoords = VertexLayout::HasTexcoords(header.vertexLayout);
-		bool normals = VertexLayout::HasNormals(header.vertexLayout);
-		bool tgbinorm = VertexLayout::HasTangentsBinormals(header.vertexLayout);
-		bool bones = VertexLayout::HasBones(header.vertexLayout);
-		UINT posos = VertexLayout::PositionOffset(header.vertexLayout);
-		UINT texos = VertexLayout::TexCoordOffset(header.vertexLayout);
-		UINT normos = VertexLayout::NormalOffset(header.vertexLayout);
-		UINT tgbnos = VertexLayout::TangentOffset(header.vertexLayout);
-		UINT boneos = VertexLayout::BoneWeightsOffset(header.vertexLayout);
-		UINT vertexSize = m_vertexSizeInBytes / sizeof(VertexElement);
-		m_vertices.resize(header.vertexCount*vertexSize);
 		WCHAR ch;
 		do { infile >> ch; } while (ch != ':');
+		m_vertices.resize(header.vertexCount*m_vertexSizeInBytes / sizeof(VertexElement));
+		VertexElement tmp[8];
+		UINT vertexCounter = 0;
 		for (UINT i = 0; i < header.vertexCount; i++)
 		{
-			if (positions)
+			if (ModelType::HasPositions(header.modelType))
 			{
-				infile >> m_vertices[vertexSize*i + posos + 0].f;
-				infile >> m_vertices[vertexSize*i + posos + 1].f;
-				infile >> m_vertices[vertexSize*i + posos + 2].f;
+				infile >> tmp[0].f;
+				infile >> tmp[1].f;
+				infile >> tmp[2].f;
+				if (ModelType::HasPositions(m_modelType))
+				{
+					m_vertices[vertexCounter++] = tmp[0];
+					m_vertices[vertexCounter++] = tmp[1];
+					m_vertices[vertexCounter++] = tmp[2];
+				}
 			}
-			if (texcoords)
+			if (ModelType::HasTexcoords(header.modelType))
 			{
-				infile >> m_vertices[vertexSize*i + texos + 0].f;
-				infile >> m_vertices[vertexSize*i + texos + 1].f;
+				infile >> tmp[0].f;
+				infile >> tmp[1].f;
+				if (ModelType::HasTexcoords(m_modelType))
+				{
+					m_vertices[vertexCounter++] = tmp[0];
+					m_vertices[vertexCounter++] = tmp[1];
+				}
 			}
-			if (normals)
+			if (ModelType::HasNormals(header.modelType))
 			{
-				infile >> m_vertices[vertexSize*i + normos + 0].f;
-				infile >> m_vertices[vertexSize*i + normos + 1].f;
-				infile >> m_vertices[vertexSize*i + normos + 2].f;
+				infile >> tmp[0].f;
+				infile >> tmp[1].f;
+				infile >> tmp[2].f;
+				if (ModelType::HasNormals(m_modelType))
+				{
+					m_vertices[vertexCounter++] = tmp[0];
+					m_vertices[vertexCounter++] = tmp[1];
+					m_vertices[vertexCounter++] = tmp[2];
+				}
 			}
-			if (tgbinorm)
+			if (ModelType::HasTangentsBinormals(header.modelType))
 			{
-				infile >> m_vertices[vertexSize*i + tgbnos + 0].f;
-				infile >> m_vertices[vertexSize*i + tgbnos + 1].f;
-				infile >> m_vertices[vertexSize*i + tgbnos + 2].f;
-				infile >> m_vertices[vertexSize*i + tgbnos + 3].f;
-				infile >> m_vertices[vertexSize*i + tgbnos + 4].f;
-				infile >> m_vertices[vertexSize*i + tgbnos + 5].f;
+				infile >> tmp[0].f;
+				infile >> tmp[1].f;
+				infile >> tmp[2].f;
+				infile >> tmp[3].f;
+				infile >> tmp[4].f;
+				infile >> tmp[5].f;
+				if (ModelType::HasTangentsBinormals(m_modelType))
+				{
+					m_vertices[vertexCounter++] = tmp[0];
+					m_vertices[vertexCounter++] = tmp[1];
+					m_vertices[vertexCounter++] = tmp[2];
+					m_vertices[vertexCounter++] = tmp[3];
+					m_vertices[vertexCounter++] = tmp[4];
+					m_vertices[vertexCounter++] = tmp[5];
+				}
 			}
-			if (bones)
+			if (ModelType::HasBones(header.modelType))
 			{
-				infile >> m_vertices[vertexSize*i + boneos + 0].f;
-				infile >> m_vertices[vertexSize*i + boneos + 1].f;
-				infile >> m_vertices[vertexSize*i + boneos + 2].f;
-				infile >> m_vertices[vertexSize*i + boneos + 3].f;
-				infile >> m_vertices[vertexSize*i + boneos + 4].u;
-				infile >> m_vertices[vertexSize*i + boneos + 5].u;
-				infile >> m_vertices[vertexSize*i + boneos + 6].u;
-				infile >> m_vertices[vertexSize*i + boneos + 7].u;
+				infile >> tmp[0].f;
+				infile >> tmp[1].f;
+				infile >> tmp[2].f;
+				infile >> tmp[3].f;
+				infile >> tmp[4].u;
+				infile >> tmp[5].u;
+				infile >> tmp[6].u;
+				infile >> tmp[7].u;
+				if (ModelType::HasBones(m_modelType))
+				{
+					m_vertices[vertexCounter++] = tmp[0];
+					m_vertices[vertexCounter++] = tmp[1];
+					m_vertices[vertexCounter++] = tmp[2];
+					m_vertices[vertexCounter++] = tmp[3];
+					m_vertices[vertexCounter++] = tmp[4];
+					m_vertices[vertexCounter++] = tmp[5];
+					m_vertices[vertexCounter++] = tmp[6];
+					m_vertices[vertexCounter++] = tmp[7];
+				}
 			}
 		}
 	}
@@ -535,15 +646,14 @@ namespace gfx
 
 #pragma region Export binary
 
-	void ModelLoader::ExportOMDBinary(UINT shaderType, LPCWSTR filename)
+	void ModelLoader::ExportOMDBinary(LPCWSTR filename, UINT modelType)
 	{
 		OMDHeader header;
 		header.fileFormat = 'B';
 		header.extension[0] = 'O';
 		header.extension[1] = 'M';
 		header.extension[2] = 'D';
-		header.vertexLayout = ShaderType::ToVertexLayout(shaderType);
-		header.shaderType = shaderType;
+		header.modelType = ModelType::RemoveUnnecessary(m_modelType & modelType);
 		header.vertexCount = (UINT)m_vertices.size() / (m_vertexSizeInBytes / sizeof(VertexElement));
 		header.indexCount = (UINT)m_indices.size();
 		header.groupCount = (UINT)m_groups.size();
@@ -570,29 +680,34 @@ namespace gfx
 	}
 	void ModelLoader::WriteVerticesBinary(std::ofstream& outfile, OMDHeader& header)
 	{
-		bool positions = VertexLayout::HasPositions(header.vertexLayout);
-		bool texcoords = VertexLayout::HasTexcoords(header.vertexLayout);
-		bool normals = VertexLayout::HasNormals(header.vertexLayout);
-		bool tgbinorm = VertexLayout::HasTangentsBinormals(header.vertexLayout);
-		bool bones = VertexLayout::HasBones(header.vertexLayout);
-		UINT posos = VertexLayout::PositionOffset(m_vertexLayout);
-		UINT texos = VertexLayout::TexCoordOffset(m_vertexLayout);
-		UINT normos = VertexLayout::NormalOffset(m_vertexLayout);
-		UINT tgbnos = VertexLayout::TangentOffset(m_vertexLayout);
-		UINT boneos = VertexLayout::BoneWeightsOffset(m_vertexLayout);
-		UINT vertexSize = m_vertexSizeInBytes / sizeof(VertexElement);
-		for (UINT i = 0; i < header.vertexCount; i++)
+		if (ModelType::VertexLayout(m_modelType) == ModelType::VertexLayout(header.modelType))
+			outfile.write((char*)m_vertices.data(), header.vertexCount*m_vertexSizeInBytes);
+		else
 		{
-			if (positions)
-				outfile.write((char*)&m_vertices[vertexSize*i + posos], sizeof(VertexElement) * 3);
-			if (texcoords)
-				outfile.write((char*)&m_vertices[vertexSize*i + texos], sizeof(VertexElement) * 2);
-			if (normals)
-				outfile.write((char*)&m_vertices[vertexSize*i + normos], sizeof(VertexElement) * 3);
-			if (tgbinorm)
-				outfile.write((char*)&m_vertices[vertexSize*i + tgbnos], sizeof(VertexElement) * 6);
-			if (bones)
-				outfile.write((char*)&m_vertices[vertexSize*i + boneos], sizeof(VertexElement) * 8);
+			UINT vertexCounter = 0;
+			for (UINT i = 0; i < header.vertexCount; i++)
+			{
+				if (ModelType::HasPositions(header.modelType))
+					outfile.write((char*)&m_vertices[vertexCounter], 3 * sizeof(VertexElement));
+				if (ModelType::HasPositions(m_modelType))
+					vertexCounter += 3;
+				if (ModelType::HasTexcoords(header.modelType))
+					outfile.write((char*)&m_vertices[vertexCounter], 2 * sizeof(VertexElement));
+				if (ModelType::HasTexcoords(m_modelType))
+					vertexCounter += 2;
+				if (ModelType::HasNormals(header.modelType))
+					outfile.write((char*)&m_vertices[vertexCounter], 3 * sizeof(VertexElement));
+				if (ModelType::HasNormals(m_modelType))
+					vertexCounter += 3;
+				if (ModelType::HasTangentsBinormals(header.modelType))
+					outfile.write((char*)&m_vertices[vertexCounter], 6 * sizeof(VertexElement));
+				if (ModelType::HasTangentsBinormals(m_modelType))
+					vertexCounter += 6;
+				if (ModelType::HasBones(header.modelType))
+					outfile.write((char*)&m_vertices[vertexCounter], 8 * sizeof(VertexElement));
+				if (ModelType::HasBones(m_modelType))
+					vertexCounter += 8;
+			}
 		}
 	}
 	void ModelLoader::WriteIndicesBinary(std::ofstream& outfile, OMDHeader& header)
@@ -608,11 +723,11 @@ namespace gfx
 		for (UINT i = 0; i < header.materialCount; i++)
 		{
 			WCHAR nul = 0;
-			if (ShaderType::HasTexture(header.shaderType))
+			if (ModelType::HasTexture(header.modelType))
 				outfile.write((char*)m_textureNames[i].c_str(), (m_textureNames[i].length() + 1) * sizeof(WCHAR));
 			else
 				outfile.write((char*)&nul, sizeof(WCHAR));
-			if (ShaderType::HasNormalmap(header.shaderType))
+			if (ModelType::HasNormalmap(header.modelType))
 				outfile.write((char*)m_normalmapNames[i].c_str(), (m_normalmapNames[i].length() + 1) * sizeof(WCHAR));
 			else
 				outfile.write((char*)&nul, sizeof(WCHAR));
@@ -645,21 +760,20 @@ namespace gfx
 
 #pragma region Export text
 
-	void ModelLoader::ExportOMDText(UINT shaderType, LPCWSTR filename)
+	void ModelLoader::ExportOMDText(LPCWSTR filename, UINT modelType)
 	{
 		OMDHeader header;
 		header.fileFormat = 'T';
 		header.extension[0] = 'O';
 		header.extension[1] = 'M';
 		header.extension[2] = 'D';
-		header.vertexLayout = ShaderType::ToVertexLayout(shaderType);
-		header.shaderType = shaderType;
+		header.modelType = ModelType::RemoveUnnecessary(m_modelType & modelType);
 		header.vertexCount = (UINT)m_vertices.size() / (m_vertexSizeInBytes / sizeof(VertexElement));
 		header.indexCount = (UINT)m_indices.size();
 		header.groupCount = (UINT)m_groups.size();
 		header.materialCount = (UINT)m_textureNames.size();
-		header.boundingVolumePrimitive = 0;
-		header.hitboxTriangleCount = 0;
+		header.boundingVolumePrimitive = m_boundingVolumeType;
+		header.hitboxTriangleCount = (UINT)m_hitbox.size();
 		header.boneCount = 0;
 		header.animationCount = 0;
 
@@ -681,70 +795,69 @@ namespace gfx
 		outfile << header.extension[1];
 		outfile << header.extension[2];
 		outfile << std::endl;
-		outfile << L"Vertex layout: " << header.vertexLayout << std::endl;
-		outfile << L"Shader type: " << header.shaderType << std::endl;
+		outfile << L"Model type: " << header.modelType << std::endl;
 		outfile << L"Vertex count: " << header.vertexCount << std::endl;
 		outfile << L"Index count: " << header.indexCount << std::endl;
 		outfile << L"Group count: " << header.groupCount << std::endl;
-		outfile << L"Material count:" << header.materialCount << std::endl;
-		outfile << L"Bounding volume primitive:" << header.boundingVolumePrimitive << std::endl;
-		outfile << L"Hitbox triangle count:" << header.hitboxTriangleCount << std::endl;
+		outfile << L"Material count: " << header.materialCount << std::endl;
+		outfile << L"Bounding volume primitive: " << header.boundingVolumePrimitive << std::endl;
+		outfile << L"Hitbox triangle count: " << header.hitboxTriangleCount << std::endl;
 		outfile << L"Bone count: " << header.boneCount << std::endl;
 		outfile << L"Animation count: " << header.animationCount << std::endl;
 	}
 	void ModelLoader::WriteVerticesText(std::wofstream& outfile, OMDHeader& header)
 	{
-		bool positions = VertexLayout::HasPositions(header.vertexLayout);
-		bool texcoords = VertexLayout::HasTexcoords(header.vertexLayout);
-		bool normals = VertexLayout::HasNormals(header.vertexLayout);
-		bool tgbinorm = VertexLayout::HasTangentsBinormals(header.vertexLayout);
-		bool bones = VertexLayout::HasBones(header.vertexLayout);
-		UINT posos = VertexLayout::PositionOffset(m_vertexLayout);
-		UINT texos = VertexLayout::TexCoordOffset(m_vertexLayout);
-		UINT normos = VertexLayout::NormalOffset(m_vertexLayout);
-		UINT tgbnos = VertexLayout::TangentOffset(m_vertexLayout);
-		UINT boneos = VertexLayout::BoneWeightsOffset(m_vertexLayout);
-		UINT vertexSize = m_vertexSizeInBytes / sizeof(VertexElement);
 		outfile << std::endl << L"Vertices:" << std::endl;
+		UINT vertexCounter = 0;
 		for (UINT i = 0; i < header.vertexCount; i++)
 		{
-			if (positions)
+			if (ModelType::HasPositions(header.modelType))
 			{
-				outfile << m_vertices[vertexSize*i + posos + 0].f << ' ';
-				outfile << m_vertices[vertexSize*i + posos + 1].f << ' ';
-				outfile << m_vertices[vertexSize*i + posos + 2].f << ' ';
+				outfile << m_vertices[vertexCounter++].f << ' ';
+				outfile << m_vertices[vertexCounter++].f << ' ';
+				outfile << m_vertices[vertexCounter++].f << ' ';
 			}
-			if (texcoords)
+			else if (ModelType::HasPositions(m_modelType))
+				vertexCounter += 3;
+			if (ModelType::HasTexcoords(header.modelType))
 			{
-				outfile << m_vertices[vertexSize*i + texos + 0].f << ' ';
-				outfile << m_vertices[vertexSize*i + texos + 1].f << ' ';
+				outfile << m_vertices[vertexCounter++].f << ' ';
+				outfile << m_vertices[vertexCounter++].f << ' ';
 			}
-			if (normals)
+			else if (ModelType::HasTexcoords(m_modelType))
+				vertexCounter += 2;
+			if (ModelType::HasNormals(header.modelType))
 			{
-				outfile << m_vertices[vertexSize*i + normos + 0].f << ' ';
-				outfile << m_vertices[vertexSize*i + normos + 1].f << ' ';
-				outfile << m_vertices[vertexSize*i + normos + 2].f << ' ';
+				outfile << m_vertices[vertexCounter++].f << ' ';
+				outfile << m_vertices[vertexCounter++].f << ' ';
+				outfile << m_vertices[vertexCounter++].f << ' ';
 			}
-			if (tgbinorm)
+			else if (ModelType::HasNormals(m_modelType))
+				vertexCounter += 3;
+			if (ModelType::HasTangentsBinormals(header.modelType))
 			{
-				outfile << m_vertices[vertexSize*i + tgbnos + 0].f << ' ';
-				outfile << m_vertices[vertexSize*i + tgbnos + 1].f << ' ';
-				outfile << m_vertices[vertexSize*i + tgbnos + 2].f << ' ';
-				outfile << m_vertices[vertexSize*i + tgbnos + 3].f << ' ';
-				outfile << m_vertices[vertexSize*i + tgbnos + 4].f << ' ';
-				outfile << m_vertices[vertexSize*i + tgbnos + 5].f << ' ';
+				outfile << m_vertices[vertexCounter++].f << ' ';
+				outfile << m_vertices[vertexCounter++].f << ' ';
+				outfile << m_vertices[vertexCounter++].f << ' ';
+				outfile << m_vertices[vertexCounter++].f << ' ';
+				outfile << m_vertices[vertexCounter++].f << ' ';
+				outfile << m_vertices[vertexCounter++].f << ' ';
 			}
-			if (bones)
+			else if (ModelType::HasTangentsBinormals(m_modelType))
+				vertexCounter += 6;
+			if (ModelType::HasBones(header.modelType))
 			{
-				outfile << m_vertices[vertexSize*i + boneos + 0].f << ' ';
-				outfile << m_vertices[vertexSize*i + boneos + 1].f << ' ';
-				outfile << m_vertices[vertexSize*i + boneos + 2].f << ' ';
-				outfile << m_vertices[vertexSize*i + boneos + 3].f << ' ';
-				outfile << m_vertices[vertexSize*i + boneos + 4].u << ' ';
-				outfile << m_vertices[vertexSize*i + boneos + 5].u << ' ';
-				outfile << m_vertices[vertexSize*i + boneos + 6].u << ' ';
-				outfile << m_vertices[vertexSize*i + boneos + 7].u << ' ';
+				outfile << m_vertices[vertexCounter++].f << ' ';
+				outfile << m_vertices[vertexCounter++].f << ' ';
+				outfile << m_vertices[vertexCounter++].f << ' ';
+				outfile << m_vertices[vertexCounter++].f << ' ';
+				outfile << m_vertices[vertexCounter++].u << ' ';
+				outfile << m_vertices[vertexCounter++].u << ' ';
+				outfile << m_vertices[vertexCounter++].u << ' ';
+				outfile << m_vertices[vertexCounter++].u << ' ';
 			}
+			else if (ModelType::HasBones(m_modelType))
+				vertexCounter += 8;
 			outfile << std::endl;
 		}
 	}
@@ -773,11 +886,11 @@ namespace gfx
 		{
 			outfile << L"New material" << std::endl;
 			outfile << L"\tTexture name: ";
-			if (ShaderType::HasTexture(header.shaderType))
+			if (ModelType::HasTexture(header.modelType))
 				outfile << m_textureNames[i];
 			outfile << std::endl;
 			outfile << L"\tNormalmap name: ";
-			if (ShaderType::HasNormalmap(header.shaderType))
+			if (ModelType::HasNormalmap(header.modelType))
 				outfile << m_normalmapNames[i];
 			outfile << std::endl;
 		}
@@ -841,19 +954,24 @@ namespace gfx
 
 #pragma endregion
 
-	ModelLoader::ModelLoader() :m_vertexSizeInBytes(0), m_vertexLayout(0) {}
-	ModelLoader::ModelLoader(LPCWSTR filename) : m_vertexSizeInBytes(0), m_vertexLayout(0)
+	ModelLoader::ModelLoader() :
+		m_vertexSizeInBytes(0),
+		m_modelType(0),
+		m_boundingVolumeType(0) {}
+	ModelLoader::ModelLoader(LPCWSTR filename, UINT modelType) :
+		m_vertexSizeInBytes(0),
+		m_modelType(0),
+		m_boundingVolumeType(0)
 	{
-		LoadModel(filename);
+		LoadModel(filename, modelType);
 	}
 	void ModelLoader::Clear()
 	{
 		m_folder.clear();
 		m_filename.clear();
 		m_vertexSizeInBytes = 0;
-		m_vertexLayout = 0;
-		m_shaderType = 0;
-		m_boundingVolumeType = mth::BoundingVolume::NO_TYPE;
+		m_modelType = 0;
+		m_boundingVolumeType = 0;
 		m_vertices.clear();
 		m_indices.clear();
 		m_textureNames.clear();
@@ -864,14 +982,14 @@ namespace gfx
 		m_bvSphereRadius = 0.0f;
 		m_hitbox.clear();
 	}
-	void ModelLoader::ExportOMD(UINT shaderLayout, LPCWSTR filename, bool binary)
+	void ModelLoader::ExportOMD(LPCWSTR filename, UINT modelType, bool binary)
 	{
 		if (binary)
-			ExportOMDBinary(shaderLayout, filename);
+			ExportOMDBinary(filename, modelType);
 		else
-			ExportOMDText(shaderLayout, filename);
+			ExportOMDText(filename, modelType);
 	}
-	void ModelLoader::LoadModel(LPCWSTR filename)
+	void ModelLoader::LoadModel(LPCWSTR filename, UINT modelType)
 	{
 		UINT lastSlashIndex = 0;
 		UINT lastDotIndex = 0;
@@ -892,12 +1010,15 @@ namespace gfx
 			filename[i + 2] == 'm' &&
 			filename[i + 3] == 'd'&&
 			filename[i + 4] == '\0')
-			LoadOMD(filename);
+			LoadOMD(filename, modelType);
 		else
-			LoadAssimp(filename);
+			LoadAssimp(filename, modelType);
+		OrganizeMaterials();
 	}
 
-	void ModelLoader::CreateCube(mth::float3 p, mth::float3 s, UINT shaderType)
+#pragma region Create primitives
+
+	void ModelLoader::CreateCube(mth::float3 p, mth::float3 s, UINT modelType)
 	{
 		Vertex_PTMB vertices[] = {
 			{{p.x + s.x, p.y, p.z + s.z}, {0.0f, 1.0f}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}, {-1.0f, 0.0f, 0.0f}},
@@ -928,27 +1049,27 @@ namespace gfx
 		UINT indices[] = {
 			0, 2, 1, 0, 3, 2, 4, 6, 5, 4, 7, 6, 8, 10, 9, 8, 11, 10, 12, 14, 13, 12, 15, 14, 16, 18, 17, 16, 19, 18, 20, 22, 21, 20, 23, 22
 		};
-		Create(vertices, sizeof(vertices) / sizeof(vertices[0]), indices, sizeof(indices) / sizeof(indices[0]), shaderType);
+		Create(vertices, sizeof(vertices) / sizeof(vertices[0]), indices, sizeof(indices) / sizeof(indices[0]), modelType);
 	}
 
 	void ModelLoader::CreateFullScreenQuad()
 	{
-		CreateQuad({ -1.0f, -1.0f }, { 2.0f, 2.0f }, { 0.0f, 0.0f }, { 1.0f, 1.0f }, ShaderType::PT);
+		CreateQuad({ -1.0f, -1.0f }, { 2.0f, 2.0f }, { 0.0f, 0.0f }, { 1.0f, 1.0f }, ModelType::PT);
 		Transform(mth::float4x4::Translation(0.0f, 0.0f, 1.0f)*mth::float4x4::RotationX(-mth::pi*0.5f));
 	}
 
 	void ModelLoader::CreateScreenQuad(mth::float2 pos, mth::float2 size)
 	{
-		CreateQuad(pos, size, { 0.0f, 0.0f }, { 1.0f, 1.0f }, ShaderType::PT);
+		CreateQuad(pos, size, { 0.0f, 0.0f }, { 1.0f, 1.0f }, ModelType::PT);
 		Transform(mth::float4x4::Translation(0.0f, 0.0f, 1.0f)*mth::float4x4::RotationX(-mth::pi*0.5f));
 	}
 
-	void ModelLoader::CreateQuad(mth::float2 pos, mth::float2 size, UINT shaderType)
+	void ModelLoader::CreateQuad(mth::float2 pos, mth::float2 size, UINT modelType)
 	{
-		CreateQuad(pos, size, { 0.0f, 0.0f }, { 1.0f, 1.0f }, shaderType);
+		CreateQuad(pos, size, { 0.0f, 0.0f }, { 1.0f, 1.0f }, modelType);
 	}
 
-	void ModelLoader::CreateQuad(mth::float2 pos, mth::float2 size, mth::float2 tpos, mth::float2 tsize, UINT shaderType)
+	void ModelLoader::CreateQuad(mth::float2 pos, mth::float2 size, mth::float2 tpos, mth::float2 tsize, UINT modelType)
 	{
 		Vertex_PTMB vertices[] = {
 		{ {pos.x + size.x, 0.0f, pos.y}, { tpos.x + tsize.x, tpos.y + tsize.y }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
@@ -957,7 +1078,92 @@ namespace gfx
 		{ {pos.x, 0.0f, pos.y}, { tpos.x, tpos.y + tsize.y }, { 0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f} }
 		};
 		UINT indices[] = { 0, 2, 1, 0, 3, 2 };
-		Create(vertices, sizeof(vertices) / sizeof(vertices[0]), indices, sizeof(indices) / sizeof(indices[0]), shaderType);
+		Create(vertices, sizeof(vertices) / sizeof(vertices[0]), indices, sizeof(indices) / sizeof(indices[0]), modelType);
+	}
+
+#pragma endregion
+
+	void ModelLoader::MakeHitboxFromVertices()
+	{
+		mth::float3 maxpos, minpos;
+		m_hitbox.clear();
+		m_boundingVolumeType = mth::BoundingVolume::CUBOID;
+		m_bvSphereRadius = 0.0f;
+		minpos.x = maxpos.x = m_vertices[0].f;
+		minpos.y = maxpos.y = m_vertices[1].f;
+		minpos.z = maxpos.z = m_vertices[2].f;
+		UINT vertexSize = getVertexSizeInFloats();
+		m_hitbox.resize(m_indices.size() / 3);
+		mth::float3 tri[3];
+		for (UINT i = 0; i < (UINT)m_hitbox.size(); i++)
+		{
+			tri[0] = mth::float3(
+				m_vertices[vertexSize*m_indices[i * 3 + 0] + 0].f,
+				m_vertices[vertexSize*m_indices[i * 3 + 0] + 1].f,
+				m_vertices[vertexSize*m_indices[i * 3 + 0] + 2].f);
+			tri[1] = mth::float3(
+				m_vertices[vertexSize*m_indices[i * 3 + 1] + 0].f,
+				m_vertices[vertexSize*m_indices[i * 3 + 1] + 1].f,
+				m_vertices[vertexSize*m_indices[i * 3 + 1] + 2].f);
+			tri[2] = mth::float3(
+				m_vertices[vertexSize*m_indices[i * 3 + 2] + 0].f,
+				m_vertices[vertexSize*m_indices[i * 3 + 2] + 1].f,
+				m_vertices[vertexSize*m_indices[i * 3 + 2] + 2].f);
+			for (UINT v = 0; v < 3; v++)
+			{
+				if (minpos.x > tri[v].x) minpos.x = tri[v].x;
+				if (maxpos.x < tri[v].x) maxpos.x = tri[v].x;
+				if (minpos.y > tri[v].x) minpos.y = tri[v].x;
+				if (maxpos.y < tri[v].x) maxpos.y = tri[v].x;
+				if (minpos.z > tri[v].x) minpos.z = tri[v].x;
+				if (maxpos.z < tri[v].x) maxpos.z = tri[v].x;
+			}
+			m_hitbox[i] = mth::Triangle(tri);
+		}
+		m_bvPosition = minpos;
+		m_bvCuboidSize = maxpos - minpos;
+	}
+
+	void ModelLoader::MakeVerticesFromHitbox()
+	{
+		m_modelType = ModelType::P;
+		m_vertexSizeInBytes = ModelType::VertexSizeInBytes(m_modelType);
+		m_vertices.resize(m_hitbox.size() * 3 * 3);
+		for (size_t i = 0; i < m_hitbox.size(); i++)
+		{
+			m_vertices[9 * i + 0] = m_hitbox[i].getVertex(0).x;
+			m_vertices[9 * i + 1] = m_hitbox[i].getVertex(0).y;
+			m_vertices[9 * i + 2] = m_hitbox[i].getVertex(0).z;
+			m_vertices[9 * i + 3] = m_hitbox[i].getVertex(1).x;
+			m_vertices[9 * i + 4] = m_hitbox[i].getVertex(1).y;
+			m_vertices[9 * i + 5] = m_hitbox[i].getVertex(1).z;
+			m_vertices[9 * i + 6] = m_hitbox[i].getVertex(2).x;
+			m_vertices[9 * i + 7] = m_hitbox[i].getVertex(2).y;
+			m_vertices[9 * i + 8] = m_hitbox[i].getVertex(2).z;
+		}
+		m_indices.resize(m_hitbox.size() * 3);
+		for (size_t i = 0; i < m_indices.size(); i++)
+			m_indices[i] = i;
+		m_groups.clear();
+		m_groups.push_back({ 0, (UINT)m_indices.size() , 0 });
+		m_textureNames.clear();
+		m_textureNames.push_back(L"");
+		m_normalmapNames.clear();
+		m_normalmapNames.push_back(L"");
+	}
+
+	bool ModelLoader::HasHitbox()
+	{
+		return m_hitbox.size() > 0;
+	}
+
+	void ModelLoader::SwapHitboxes(ModelLoader& other)
+	{
+		std::swap(other.m_boundingVolumeType, m_boundingVolumeType);
+		std::swap(other.m_bvPosition, m_bvPosition);
+		std::swap(other.m_bvCuboidSize, m_bvCuboidSize);
+		std::swap(other.m_bvSphereRadius, m_bvSphereRadius);
+		other.m_hitbox.swap(m_hitbox);
 	}
 
 	void ModelLoader::FlipInsideOut()
@@ -969,9 +1175,9 @@ namespace gfx
 			m_indices[i + 2] = tmp;
 		}
 		UINT vertexSize = getVertexSizeInFloats();
-		if (VertexLayout::HasNormals(m_vertexLayout))
+		if (ModelType::HasNormals(m_modelType))
 		{
-			UINT offset = VertexLayout::NormalOffset(m_vertexLayout);
+			UINT offset = ModelType::NormalOffset(m_modelType);
 			for (UINT i = 0; i < getVertexCount(); i++)
 			{
 				m_vertices[i*vertexSize + offset + 0].f *= -1.0f;
@@ -979,10 +1185,10 @@ namespace gfx
 				m_vertices[i*vertexSize + offset + 2].f *= -1.0f;
 			}
 		}
-		if (VertexLayout::HasTangentsBinormals(m_vertexLayout))
+		if (ModelType::HasTangentsBinormals(m_modelType))
 		{
-			UINT offset1 = VertexLayout::TangentOffset(m_vertexLayout);
-			UINT offset2 = VertexLayout::BinormalOffset(m_vertexLayout);
+			UINT offset1 = ModelType::TangentOffset(m_modelType);
+			UINT offset2 = ModelType::BinormalOffset(m_modelType);
 			for (UINT i = 0; i < getVertexCount(); i++)
 			{
 				m_vertices[i*vertexSize + offset1 + 0].f *= -1.0f;
@@ -999,9 +1205,9 @@ namespace gfx
 	{
 		UINT vertexSize = getVertexSizeInFloats();
 		mth::float4 v;
-		if (VertexLayout::HasPositions(m_vertexLayout))
+		if (ModelType::HasPositions(m_modelType))
 		{
-			UINT offset = VertexLayout::PositionOffset(m_vertexLayout);
+			UINT offset = ModelType::PositionOffset(m_modelType);
 			for (UINT i = 0; i < getVertexCount(); i++)
 			{
 				v.x = m_vertices[i*vertexSize + offset + 0].f;
@@ -1014,9 +1220,9 @@ namespace gfx
 				m_vertices[i*vertexSize + offset + 2] = v.z;
 			}
 		}
-		if (VertexLayout::HasNormals(m_vertexLayout))
+		if (ModelType::HasNormals(m_modelType))
 		{
-			UINT offset = VertexLayout::NormalOffset(m_vertexLayout);
+			UINT offset = ModelType::NormalOffset(m_modelType);
 			for (UINT i = 0; i < getVertexCount(); i++)
 			{
 				v.x = m_vertices[i*vertexSize + offset + 0].f;
@@ -1029,10 +1235,10 @@ namespace gfx
 				m_vertices[i*vertexSize + offset + 2] = v.z;
 			}
 		}
-		if (VertexLayout::HasTangentsBinormals(m_vertexLayout))
+		if (ModelType::HasTangentsBinormals(m_modelType))
 		{
-			UINT offset1 = VertexLayout::TangentOffset(m_vertexLayout);
-			UINT offset2 = VertexLayout::BinormalOffset(m_vertexLayout);
+			UINT offset1 = ModelType::TangentOffset(m_modelType);
+			UINT offset2 = ModelType::BinormalOffset(m_modelType);
 			for (UINT i = 0; i < getVertexCount(); i++)
 			{
 				v.x = m_vertices[i*vertexSize + offset1 + 0].f;
