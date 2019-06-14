@@ -177,7 +177,6 @@
     <ClCompile Include="Code\graphics\graphics.cpp" />
     <ClCompile Include="Code\graphics\material.cpp" />
     <ClCompile Include="Code\graphics\model.cpp" />
-    <ClCompile Include="Code\graphics\modelloader.cpp" />
     <ClCompile Include="Code\graphics\pixelshader.cpp" />
     <ClCompile Include="Code\graphics\samplerstate.cpp" />
     <ClCompile Include="Code\graphics\shaderbase.cpp" />
@@ -190,6 +189,11 @@
     <ClCompile Include="Code\math\geometry.cpp" />
     <ClCompile Include="Code\math\linalg.cpp" />
     <ClCompile Include="Code\math\position.cpp" />
+    <ClCompile Include="Code\modelloaders\assimploader.cpp" />
+    <ClCompile Include="Code\modelloaders\modelloader.cpp" />
+    <ClCompile Include="Code\modelloaders\omdexporter.cpp" />
+    <ClCompile Include="Code\modelloaders\omdloader.cpp" />
+    <ClCompile Include="Code\modelloaders\pmxloader.cpp" />
     <ClCompile Include="Code\scene.cpp" />
     <ClCompile Include="Code\window.cpp" />
   </ItemGroup>
@@ -200,7 +204,6 @@
     <ClInclude Include="Code\graphics\graphics.h" />
     <ClInclude Include="Code\graphics\material.h" />
     <ClInclude Include="Code\graphics\model.h" />
-    <ClInclude Include="Code\graphics\modelloader.h" />
     <ClInclude Include="Code\graphics\pixelshader.h" />
     <ClInclude Include="Code\graphics\samplerstate.h" />
     <ClInclude Include="Code\graphics\shaderbase.h" />
@@ -212,6 +215,11 @@
     <ClInclude Include="Code\math\geometry.h" />
     <ClInclude Include="Code\math\linalg.h" />
     <ClInclude Include="Code\math\position.h" />
+    <ClInclude Include="Code\modelloaders\assimploader.h" />
+    <ClInclude Include="Code\modelloaders\modelloader.h" />
+    <ClInclude Include="Code\modelloaders\omdexporter.h" />
+    <ClInclude Include="Code\modelloaders\omdloader.h" />
+    <ClInclude Include="Code\modelloaders\pmxloader.h" />
     <ClInclude Include="Code\scene.h" />
     <ClInclude Include="Code\window.h" />
   </ItemGroup>

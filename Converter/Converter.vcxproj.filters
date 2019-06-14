@@ -28,6 +28,12 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{21225982-c9e9-4706-bdd6-0a4f673535a1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\modelloaders">
+      <UniqueIdentifier>{bb3c7330-f77d-47bb-9887-8b4e70a4774f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\modelloaders">
+      <UniqueIdentifier>{4901bc13-72f9-49f7-9e51-da5c44bccf1d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="code\helpers.cpp">
@@ -52,9 +58,6 @@
       <Filter>Source Files\graphics</Filter>
     </ClCompile>
     <ClCompile Include="code\graphics\model.cpp">
-      <Filter>Source Files\graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="code\graphics\modelloader.cpp">
       <Filter>Source Files\graphics</Filter>
     </ClCompile>
     <ClCompile Include="code\graphics\pixelshader.cpp">
@@ -93,6 +96,21 @@
     <ClCompile Include="Code\math\boundingvolume.cpp">
       <Filter>Source Files\math</Filter>
     </ClCompile>
+    <ClCompile Include="Code\modelloaders\modelloader.cpp">
+      <Filter>Source Files\modelloaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\modelloaders\assimploader.cpp">
+      <Filter>Source Files\modelloaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\modelloaders\pmxloader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\modelloaders\omdloader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\modelloaders\omdexporter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\helpers.h">
@@ -114,9 +132,6 @@
       <Filter>Header Files\graphics</Filter>
     </ClInclude>
     <ClInclude Include="code\graphics\pixelshader.h">
-      <Filter>Header Files\graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="code\graphics\modelloader.h">
       <Filter>Header Files\graphics</Filter>
     </ClInclude>
     <ClInclude Include="code\graphics\model.h">
@@ -154,6 +169,21 @@
     </ClInclude>
     <ClInclude Include="Code\math\boundingvolume.h">
       <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\modelloaders\modelloader.h">
+      <Filter>Header Files\modelloaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\modelloaders\assimploader.h">
+      <Filter>Header Files\modelloaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\modelloaders\pmxloader.h">
+      <Filter>Header Files\modelloaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\modelloaders\omdloader.h">
+      <Filter>Header Files\modelloaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\modelloaders\omdexporter.h">
+      <Filter>Header Files\modelloaders</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

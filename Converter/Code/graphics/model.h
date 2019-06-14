@@ -1,7 +1,7 @@
 #pragma once
 
 #include "graphics.h"
-#include "modelloader.h"
+#include "modelloaders/modelloader.h"
 
 namespace gfx
 {

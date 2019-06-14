@@ -30,12 +30,18 @@ public:
 		if (m_ptr)
 			m_ptr->AddRef();
 	}
+	AutoReleasePtr(AutoReleasePtr&& other) :
+		m_ptr(other.m_ptr)
+	{
+		other.m_ptr = nullptr;
+	}
 	~AutoReleasePtr()
 	{
 		Release();
 	}
 	AutoReleasePtr& operator=(const AutoReleasePtr& other)
 	{
+		Release();
 		m_ptr = other.m_ptr;
 		if (m_ptr)
 			m_ptr->AddRef();
@@ -56,19 +62,19 @@ public:
 	{
 		return m_ptr == nullptr;
 	}
-	bool operator==(AutoReleasePtr& other)
+	bool operator==(AutoReleasePtr& other) const
 	{
 		return m_ptr == other.m_ptr;
 	}
-	bool operator!=(AutoReleasePtr& other)
+	bool operator!=(AutoReleasePtr& other) const
 	{
 		return m_ptr != other.m_ptr;
 	}
-	bool operator==(T *ptr)
+	bool operator==(T *ptr) const
 	{
 		return m_ptr == ptr;
 	}
-	bool operator!=(T *ptr)
+	bool operator!=(T *ptr) const
 	{
 		return m_ptr != ptr;
 	}
