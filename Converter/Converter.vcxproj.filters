@@ -103,13 +103,13 @@
       <Filter>Source Files\modelloaders</Filter>
     </ClCompile>
     <ClCompile Include="Code\modelloaders\pmxloader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Code\modelloaders\omdloader.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\modelloaders</Filter>
     </ClCompile>
     <ClCompile Include="Code\modelloaders\omdexporter.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\modelloaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\modelloaders\omdloader.cpp">
+      <Filter>Source Files\modelloaders</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

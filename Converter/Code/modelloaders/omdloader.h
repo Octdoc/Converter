@@ -4,6 +4,21 @@
 
 namespace gfx
 {
+	struct OMDHeader
+	{
+		char fileFormat;	//'t' for text, 'b' for binary
+		char extension[3];	//"OMD"
+		UINT modelType;
+		UINT vertexCount;
+		UINT indexCount;
+		UINT groupCount;
+		UINT materialCount;
+		UINT boundingVolumePrimitive;
+		UINT hitboxTriangleCount;
+		UINT boneCount;
+		UINT animationCount;
+	};
+
 	class OMDLoader :public ModelLoader
 	{
 	private:

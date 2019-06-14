@@ -1,6 +1,6 @@
 #pragma once
 
-#include "modelloader.h"
+#include "omdloader.h"
 
 namespace gfx
 {
