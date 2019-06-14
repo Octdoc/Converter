@@ -122,7 +122,7 @@ namespace cvt
 		m_scene->ShowHitbox(isCheckBoxChecked(m_cbShowHitbox));
 		InvalidateRect(m_gfxWindow, nullptr, false);
 	}
-	Window::Window(LPCWSTR appWindowName, HINSTANCE hInstance)
+	Window::Window(LPCWSTR appWindowName, HINSTANCE hInstance, std::vector<std::wstring>& args)
 	{
 		RECT rect;
 		rect.left = 0;
@@ -168,7 +168,20 @@ namespace cvt
 		DragAcceptFiles(m_hitboxDrop, true);
 		SetCheckBox(m_cbShowHitbox, true);
 
-		m_modelLoader.CreateCube(-1.0f, 2.0f, gfx::ModelType::PN);
+		if (args.empty())
+			m_modelLoader.CreateCube(-1.0f, 2.0f, gfx::ModelType::PN);
+		else
+		{
+			try
+			{
+				m_modelLoader.LoadModel(args[0].c_str());
+			}
+			catch (std::exception e)
+			{
+				m_modelLoader.CreateCube(-1.0f, 2.0f, gfx::ModelType::PN);
+				MessageBoxA(NULL, e.what(), "Error", MB_OK);
+			}
+		}
 		//m_modelLoader.MakeHitboxFromVertices();
 		m_scene->SetEntity(m_modelLoader);
 		UpdateUserControls();

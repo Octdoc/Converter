@@ -88,3 +88,7 @@ public:
 
 std::wstring ToWStr(const char *str);
 std::string ToStr(const wchar_t *str);
+
+void SetExeFolderName(HINSTANCE hInstance);
+
+std::wstring ResolveFilename(std::wstring filename);

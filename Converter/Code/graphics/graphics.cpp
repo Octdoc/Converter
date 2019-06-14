@@ -9,6 +9,7 @@ namespace gfx
 		CreateRenderTarget(width, height);
 		SetViewPort(width, height);
 		CreateRasterizerStates();
+		CreateBlendStates();
 	}
 	void Graphics::CreateDevice()
 	{
@@ -129,6 +130,31 @@ namespace gfx
 
 		m_context->RSSetState(m_rasterizerSolid);
 	}
+	void Graphics::CreateBlendStates()
+	{
+		HRESULT result;
+		D3D11_BLEND_DESC blendDesc{};
+		blendDesc.RenderTarget[0].BlendEnable = false;
+		blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+		blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+		blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+		blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		blendDesc.RenderTarget[0].RenderTargetWriteMask = 0x0f;
+
+		blendDesc.RenderTarget[0].BlendEnable = true;
+		result = m_device->CreateBlendState(&blendDesc, &m_blendState_alphaOn);
+		if (FAILED(result))
+			throw std::exception("Failed to create blend state");
+
+		blendDesc.RenderTarget[0].BlendEnable = false;
+		result = m_device->CreateBlendState(&blendDesc, &m_blendState_alphaOff);
+		if (FAILED(result))
+			throw std::exception("Failed to create blend state");
+
+		EnableAlphaBlending(true);
+	}
 	Graphics::Graphics(HWND hwnd, int width, int height) :
 		m_hwnd(hwnd)
 	{
@@ -141,6 +167,11 @@ namespace gfx
 	void Graphics::RasterizerSolid()
 	{
 		m_context->RSSetState(m_rasterizerSolid);
+	}
+	void Graphics::EnableAlphaBlending(bool blend)
+	{
+		float blendFactor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		m_context->OMSetBlendState(blend ? m_blendState_alphaOn : m_blendState_alphaOff, blendFactor, 0xffffffff);
 	}
 	void Graphics::ClearScreen()
 	{

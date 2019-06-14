@@ -58,6 +58,17 @@ namespace gfx
 		void StoreMaterials(const aiScene *scene, UINT modelType);
 		void StoreVertices(const aiScene *scene, UINT modelType);
 
+#pragma region Load PMX
+
+		void LoadPMX(LPCWSTR filename, UINT modelType);
+		void PMXLoadVertexData(std::ifstream& file, int boneIndexSize, int extradata);
+		void PMXLoadIndexData(std::ifstream& file, int indexSize);
+		void PMXLoadTextureNames(std::ifstream& file, int textByteCount);
+		void PMXLoadMaterials(std::ifstream& file, int textByteCount, int texIndexSize);
+		void PMXLoadBones(std::ifstream& file, int textByteCount, int indexSize);
+
+#pragma endregion
+
 #pragma region Load OMD
 
 		void LoadOMD(LPCWSTR filename, UINT modelType);

@@ -1,4 +1,7 @@
 #include "scene.h"
+#include <map>
+
+extern std::wstring g_ExeFolder;
 
 namespace cvt
 {
@@ -26,22 +29,24 @@ namespace cvt
 		m_camController(m_cam),
 		m_showHitbox(true)
 	{
-		m_vs[0] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, L"Shaders/vsP.cso", gfx::ModelType::P));
-		m_ps[0] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, L"Shaders/psP.cso"));
-		m_vs[1] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, L"Shaders/vsPT.cso", gfx::ModelType::PT));
-		m_ps[1] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, L"Shaders/psPT.cso"));
-		m_vs[2] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, L"Shaders/vsPN.cso", gfx::ModelType::PN));
-		m_ps[2] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, L"Shaders/psPN.cso"));
-		m_vs[3] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, L"Shaders/vsPTN.cso", gfx::ModelType::PTN));
-		m_ps[3] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, L"Shaders/psPTN.cso"));
-		m_vs[4] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, L"Shaders/vsPM.cso", gfx::ModelType::PM));
-		m_ps[4] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, L"Shaders/psPM.cso"));
-		m_vs[5] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, L"Shaders/vsPTM.cso", gfx::ModelType::PTM));
-		m_ps[5] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, L"Shaders/psPTM.cso"));
+		m_vs[0] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, ResolveFilename(L"Shaders/vsP.cso").c_str(), gfx::ModelType::P));
+		m_ps[0] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, ResolveFilename(L"Shaders/psP.cso").c_str()));
+		m_vs[1] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, ResolveFilename(L"Shaders/vsPT.cso").c_str(), gfx::ModelType::PT));
+		m_ps[1] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, ResolveFilename(L"Shaders/psPT.cso").c_str()));
+		m_vs[2] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, ResolveFilename(L"Shaders/vsPN.cso").c_str(), gfx::ModelType::PN));
+		m_ps[2] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, ResolveFilename(L"Shaders/psPN.cso").c_str()));
+		m_vs[3] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, ResolveFilename(L"Shaders/vsPTN.cso").c_str(), gfx::ModelType::PTN));
+		m_ps[3] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, ResolveFilename(L"Shaders/psPTN.cso").c_str()));
+		m_vs[4] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, ResolveFilename(L"Shaders/vsPM.cso").c_str(), gfx::ModelType::PM));
+		m_ps[4] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, ResolveFilename(L"Shaders/psPM.cso").c_str()));
+		m_vs[5] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, ResolveFilename(L"Shaders/vsPTM.cso").c_str(), gfx::ModelType::PTM));
+		m_ps[5] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, ResolveFilename(L"Shaders/psPTM.cso").c_str()));
 		m_matrixBuffer = gfx::CBuffer::U(new gfx::CBuffer(m_graphics, sizeof(mth::matrix) * 2));
 		m_lightBuffer = gfx::CBuffer::U(new gfx::CBuffer(m_graphics, sizeof(float) * 8));
 		m_colorBuffer = gfx::CBuffer::U(new gfx::CBuffer(m_graphics, sizeof(float) * 4));
 		m_sampler = gfx::SamplerState::U(new gfx::SamplerState(m_graphics));
+		m_defaultTexture = std::make_shared<gfx::Texture>(m_graphics, ResolveFilename(L"Media/missing.png").c_str());
+		m_defaultNormalmap = std::make_shared<gfx::Texture>(m_graphics, ResolveFilename(L"Media/normal.png").c_str());
 
 		m_cam.SetScreenAspect(1000.0f / 720.0f);
 		m_camController.SetTargetPosition();
@@ -62,10 +67,47 @@ namespace cvt
 		vs->SetShaderToRender(m_graphics);
 		ps->SetShaderToRender(m_graphics);
 		allMaterials.resize(ml.getMaterialCount());
+		std::map<std::wstring, gfx::Texture::P> textures;
 		for (UINT i = 0; i < ml.getMaterialCount(); i++)
-			allMaterials[i] = std::make_shared<gfx::Material>(vs, ps,
-				ml.getTexture(i)[0] ? std::make_shared<gfx::Texture>(m_graphics, (ml.getFolderName() + ml.getTexture(i)).c_str()) : nullptr,
-				ml.getNormalmap(i)[0] ? std::make_shared<gfx::Texture>(m_graphics, (ml.getFolderName() + ml.getNormalmap(i)).c_str()) : nullptr);
+		{
+			gfx::Texture::P tex, norm;
+			if (ml.getTexture(i)[0])
+			{
+				if (textures.find(ml.getTexture(i)) == textures.end())
+				{
+					try
+					{
+						tex = std::make_shared<gfx::Texture>(m_graphics, (ml.getFolderName() + ml.getTexture(i)).c_str());
+					}
+					catch (std::exception e)
+					{
+						tex = m_defaultTexture;
+					}
+					textures[ml.getTexture(i)] = tex;
+				}
+				else
+				{
+					tex = textures[ml.getTexture(i)];
+				}
+			}
+			if (ml.getNormalmap(i)[0])
+			{
+				if (textures.find(ml.getNormalmap(i)) == textures.end())
+				{
+					try
+					{
+						norm = std::make_shared<gfx::Texture>(m_graphics, (ml.getFolderName() + ml.getNormalmap(i)).c_str());
+					}
+					catch (std::exception e)
+					{
+						norm = m_defaultNormalmap;
+					}
+					textures[ml.getNormalmap(i)] = norm;
+				}
+				norm = textures[ml.getNormalmap(i)];
+			}
+			allMaterials[i] = std::make_shared<gfx::Material>(vs, ps, tex, norm);
+		}
 
 		usedMaterials.resize(ml.getVertexGroupCount());
 		for (UINT i = 0; i < ml.getVertexGroupCount(); i++)

@@ -7,6 +7,7 @@ namespace cvt
 {
 	class Window
 	{
+	private:
 		HWND m_mainWindow;
 		HWND m_gfxWindow;
 
@@ -41,7 +42,7 @@ namespace cvt
 		void ShowHitbox();
 		
 	public:
-		Window(LPCWSTR appWindowName, HINSTANCE hInstance);
+		Window(LPCWSTR appWindowName, HINSTANCE hInstance, std::vector<std::wstring>& args);
 
 		void MessageHandler(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 	};

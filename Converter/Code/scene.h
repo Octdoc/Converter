@@ -20,6 +20,9 @@ namespace cvt
 		gfx::CBuffer::U m_colorBuffer;
 		gfx::SamplerState::U m_sampler;
 
+		gfx::Texture::P m_defaultTexture;
+		gfx::Texture::P m_defaultNormalmap;
+
 		gfx::Camera m_cam;
 		mth::CamController m_camController;
 		bool m_showHitbox;
