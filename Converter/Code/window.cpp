@@ -169,21 +169,21 @@ namespace cvt
 		SetCheckBox(m_cbShowHitbox, true);
 
 		if (args.empty())
-			m_modelLoader.CreateCube(-1.0f, 2.0f, gfx::ModelType::PN);
+			m_scene->SetEntityDefaultCube();
 		else
 		{
 			try
 			{
 				m_modelLoader.LoadModel(args[0].c_str());
+				m_scene->SetEntity(m_modelLoader);
 			}
 			catch (std::exception e)
 			{
-				m_modelLoader.CreateCube(-1.0f, 2.0f, gfx::ModelType::PN);
+				m_scene->SetEntityDefaultCube();
 				MessageBoxA(NULL, e.what(), "Error", MB_OK);
 			}
 		}
 		//m_modelLoader.MakeHitboxFromVertices();
-		m_scene->SetEntity(m_modelLoader);
 		UpdateUserControls();
 	}
 

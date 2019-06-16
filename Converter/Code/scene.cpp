@@ -57,6 +57,64 @@ namespace cvt
 		m_sampler->SetSamplerState(m_graphics);
 	}
 
+	void Scene::SetEntityDefaultCube()
+	{
+		gfx::ModelLoader ml;
+		ml.CreateCube(-1.0f, 2.0f, gfx::ModelType::PTN);
+		gfx::Model::P model = std::make_shared<gfx::Model>(m_graphics, ml);
+		int shaderIndex = ModelTypeToIndex(ml.getModelType());
+		gfx::VertexShader::P vs = m_vs[shaderIndex];
+		gfx::PixelShader::P ps = m_ps[shaderIndex];
+		vs->SetShaderToRender(m_graphics);
+		ps->SetShaderToRender(m_graphics);
+		gfx::Material::P material;
+
+		int textureWidth = 512;
+		int textureHeight = 512;
+		std::vector<unsigned char> img(textureWidth * textureHeight * 4);
+		for (int x = 0; x < textureWidth; x++)
+			for (int y = 0; y < textureHeight; y++)
+			{
+				float i;
+				float cx = ((float)x - float(textureWidth) * 0.7f) / float(textureWidth) * 2.5f;
+				float cy = ((float)y - float(textureHeight) * 0.5f) / float(textureHeight) * 2.5f;
+				float tx, ty, zx = 0.0f, zy = 0.0f;
+
+				for (i = 0.0f; i < 256.0f; i++)
+				{
+					tx = zx * zx - zy * zy;
+					ty = 2.0f * zx * zy;
+					zx = tx + cx;
+					zy = ty + cy;
+					if (zx * zx + zy * zy > 4.0f)
+						break;
+				}
+
+				i /= 256.0f;
+				float r = fabsf(6.0f * i - 3.0f) - 1.0f;
+				float g = 2.0f - fabsf(6.0f * i - 2.0f);
+				float b = 2.0f - fabsf(6.0f * i - 4.0f);
+				r *= (1.0f - r * 0.49f);
+				g *= (1.0f - r * 0.49f);
+				b *= (1.0f - r * 0.49f);
+				if (r < 0.0f)r = 0.0f;
+				else if (r > 1.0f)r = 1.0f;
+				if (g < 0.0f)g = 0.0f;
+				else if (g > 1.0f)g = 1.0f;
+				if (b < 0.0f)b = 0.0f;
+				else if (b > 1.0f)b = 1.0f;
+
+				img[(x + y * textureWidth) * 4 + 0] = (char)(r * 255.0f);
+				img[(x + y * textureWidth) * 4 + 1] = (char)(g * 255.0f);
+				img[(x + y * textureWidth) * 4 + 2] = (char)(b * 255.0f);
+				img[(x + y * textureWidth) * 4 + 3] = 255;
+			}
+
+		material = std::make_shared<gfx::Material>(vs, ps, std::make_shared<gfx::Texture>(m_graphics, img.data(), textureWidth, textureHeight), nullptr);
+
+		m_entity = gfx::Entity::U(new gfx::Entity(model, &material));
+	}
+
 	void Scene::SetEntity(gfx::ModelLoader& ml)
 	{
 		gfx::Model::P model = std::make_shared<gfx::Model>(m_graphics, ml);
