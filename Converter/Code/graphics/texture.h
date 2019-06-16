@@ -12,6 +12,11 @@ namespace gfx
 	private:
 		AutoReleasePtr<ID3D11ShaderResourceView> m_shaderResourceView;
 
+	private:
+		void LoadTexture(Graphics& graphics, LPCWSTR filename);
+		void CreateTexture(Graphics& graphics, void* data, int width, int height);
+		void LoadTarga(Graphics& graphics, LPCWSTR filename);
+
 	public:
 		Texture(Graphics& graphics, LPCWSTR filename);
 		Texture(Graphics& graphics, void* data, int width, int height);

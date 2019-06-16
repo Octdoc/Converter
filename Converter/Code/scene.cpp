@@ -129,40 +129,59 @@ namespace cvt
 		for (UINT i = 0; i < ml.getMaterialCount(); i++)
 		{
 			gfx::Texture::P tex, norm;
-			if (ml.getTexture(i)[0])
+			auto& t = ml.getTexture(i);
+			auto& n = ml.getNormalmap(i);
+			if (t.loaded)
 			{
-				if (textures.find(ml.getTexture(i)) == textures.end())
+				tex = std::make_shared<gfx::Texture>(m_graphics, t.data.data(), t.width, t.height);
+			}
+			else
+			{
+				if (t.filename[0])
 				{
-					try
+					if (textures.find(t.filename) == textures.end())
 					{
-						tex = std::make_shared<gfx::Texture>(m_graphics, (ml.getFolderName() + ml.getTexture(i)).c_str());
+						try
+						{
+							tex = std::make_shared<gfx::Texture>(m_graphics, (ml.getFolderName() + t.filename).c_str());
+						}
+						catch (std::exception e)
+						{
+							tex = m_defaultTexture;
+						}
+						textures[t.filename] = tex;
 					}
-					catch (std::exception e)
+					else
 					{
-						tex = m_defaultTexture;
+						tex = textures[t.filename];
 					}
-					textures[ml.getTexture(i)] = tex;
-				}
-				else
-				{
-					tex = textures[ml.getTexture(i)];
 				}
 			}
-			if (ml.getNormalmap(i)[0])
+			if (n.loaded)
 			{
-				if (textures.find(ml.getNormalmap(i)) == textures.end())
+				norm = std::make_shared<gfx::Texture>(m_graphics, n.data.data(), n.width, n.height);
+			}
+			else
+			{
+				if (n.filename[0])
 				{
-					try
+					if (textures.find(n.filename) == textures.end())
 					{
-						norm = std::make_shared<gfx::Texture>(m_graphics, (ml.getFolderName() + ml.getNormalmap(i)).c_str());
+						try
+						{
+							norm = std::make_shared<gfx::Texture>(m_graphics, (ml.getFolderName() + n.filename).c_str());
+						}
+						catch (std::exception e)
+						{
+							norm = m_defaultNormalmap;
+						}
+						textures[n.filename] = norm;
 					}
-					catch (std::exception e)
+					else
 					{
-						norm = m_defaultNormalmap;
+						norm = textures[n.filename];
 					}
-					textures[ml.getNormalmap(i)] = norm;
 				}
-				norm = textures[ml.getNormalmap(i)];
 			}
 			allMaterials[i] = std::make_shared<gfx::Material>(vs, ps, tex, norm);
 		}
@@ -190,8 +209,8 @@ namespace cvt
 		allMaterials.resize(ml.getMaterialCount());
 		for (UINT i = 0; i < ml.getMaterialCount(); i++)
 			allMaterials[i] = std::make_shared<gfx::Material>(vs, ps,
-				ml.getTexture(i)[0] ? std::make_shared<gfx::Texture>(m_graphics, (ml.getFolderName() + ml.getTexture(i)).c_str()) : nullptr,
-				ml.getNormalmap(i)[0] ? std::make_shared<gfx::Texture>(m_graphics, (ml.getFolderName() + ml.getNormalmap(i)).c_str()) : nullptr);
+				ml.getTexture(i).filename[0] ? std::make_shared<gfx::Texture>(m_graphics, (ml.getFolderName() + ml.getTexture(i).filename).c_str()) : nullptr,
+				ml.getNormalmap(i).filename[0] ? std::make_shared<gfx::Texture>(m_graphics, (ml.getFolderName() + ml.getNormalmap(i).filename).c_str()) : nullptr);
 
 		usedMaterials.resize(ml.getVertexGroupCount());
 		for (UINT i = 0; i < ml.getVertexGroupCount(); i++)

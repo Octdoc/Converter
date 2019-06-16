@@ -14,6 +14,22 @@ namespace gfx
 		UINT materialIndex;
 	};
 
+	struct TextureToLoad
+	{
+		std::wstring filename;
+		int width;
+		int height;
+
+		/* pixel (x,y) can be accessed: data[(x+y*width)*4+component]
+		where component is: 0 for red, 1 for green, 2 for blue, 3 for alpha */
+		std::vector<unsigned char> data;
+		bool loaded;	//if true, texture can be created from data, if false, texture can be loaded from <filename> file
+
+		TextureToLoad();
+		TextureToLoad(const wchar_t* str);
+		void Clear();
+	};
+
 	class ModelLoader
 	{
 	protected:
@@ -26,8 +42,8 @@ namespace gfx
 
 		std::vector<VertexElement> m_vertices;
 		std::vector<UINT> m_indices;
-		std::vector<std::wstring> m_textureNames;
-		std::vector<std::wstring> m_normalmapNames;
+		std::vector<TextureToLoad> m_textures;
+		std::vector<TextureToLoad> m_normalmaps;
 		std::vector<VertexGroup> m_groups;
 		mth::float3 m_bvPosition;
 		mth::float3 m_bvCuboidSize;
@@ -70,8 +86,8 @@ namespace gfx
 		inline UINT getVertexSizeInFloats() { return m_vertexSizeInBytes / sizeof(float); }
 		inline VertexGroup& getVertexGroup(UINT index) { return m_groups[index]; }
 		inline UINT getVertexGroupCount() { return (UINT)m_groups.size(); }
-		inline UINT getMaterialCount() { return (UINT)m_textureNames.size(); }
-		inline LPCWSTR getTexture(UINT index) { return (index < (UINT)m_textureNames.size()) ? m_textureNames[index].c_str() : L""; }
-		inline LPCWSTR getNormalmap(UINT index) { return (index < (UINT)m_normalmapNames.size()) ? m_normalmapNames[index].c_str() : L""; }
+		inline UINT getMaterialCount() { return (UINT)m_textures.size(); }
+		inline TextureToLoad& getTexture(UINT index) { return m_textures[index]; }
+		inline TextureToLoad& getNormalmap(UINT index) { return m_normalmaps[index]; }
 	};
 }

@@ -42,30 +42,30 @@ namespace gfx
 	}
 	void AssimpLoader::StoreMaterials(const aiScene* scene, UINT modelType)
 	{
-		m_textureNames.resize(scene->mNumMaterials);
+		m_textures.resize(scene->mNumMaterials);
 		for (UINT i = 1; i < scene->mNumMaterials; i++)
 		{
 			if (ModelType::HasTexture(modelType) && scene->mMaterials[i]->GetTextureCount(aiTextureType_DIFFUSE) > 0)
 			{
 				aiString path;
 				scene->mMaterials[i]->GetTexture(aiTextureType_DIFFUSE, 0, &path);
-				m_textureNames[i] = FolderlessFilename(path.data);
+				m_textures[i].filename = FolderlessFilename(path.data);
 			}
 			else
-				m_textureNames[i] = L"";
+				m_textures[i].filename = L"";
 		}
 
-		m_normalmapNames.resize(scene->mNumMaterials);
+		m_normalmaps.resize(scene->mNumMaterials);
 		for (UINT i = 1; i < scene->mNumMaterials; i++)
 		{
 			if (ModelType::HasNormalmap(modelType) && scene->mMaterials[i]->GetTextureCount(aiTextureType_NORMALS) > 0)
 			{
 				aiString path;
 				scene->mMaterials[i]->GetTexture(aiTextureType_NORMALS, 0, &path);
-				m_normalmapNames[i] = FolderlessFilename(path.data);
+				m_normalmaps[i].filename = FolderlessFilename(path.data);
 			}
 			else
-				m_normalmapNames[i] = L"";
+				m_normalmaps[i].filename = L"";
 		}
 	}
 

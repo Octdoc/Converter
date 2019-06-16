@@ -257,11 +257,11 @@ namespace gfx
 		{
 			std::wstring str;
 			ReadPMXText(file, str, textByteCount);
-			m_textureNames.push_back(str);
-			m_normalmapNames.push_back(L"");
+			m_textures.push_back(TextureToLoad(str.c_str()));
+			m_normalmaps.push_back(TextureToLoad());
 		}
-		m_textureNames.push_back(L"");
-		m_normalmapNames.push_back(L"");
+		m_textures.push_back(TextureToLoad());
+		m_normalmaps.push_back(TextureToLoad());
 	}
 
 	void PMXLoader::PMXLoadMaterials(std::ifstream& file, int textByteCount, int texIndexSize)
@@ -277,7 +277,7 @@ namespace gfx
 			VertexGroup vg;
 			vg.startIndex = indexCounter;
 			vg.indexCount = mat.surfaceCount;
-			vg.materialIndex = mat.textureIndex < 0 ? (int)m_textureNames.size() - 1 : mat.textureIndex;
+			vg.materialIndex = mat.textureIndex < 0 ? (int)m_textures.size() - 1 : mat.textureIndex;
 			m_groups.push_back(vg);
 			indexCounter += vg.indexCount;
 		}

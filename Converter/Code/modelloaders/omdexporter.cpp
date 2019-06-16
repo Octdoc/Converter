@@ -16,7 +16,7 @@ namespace gfx
 		header.vertexCount = (UINT)m_vertices.size() / (m_vertexSizeInBytes / sizeof(VertexElement));
 		header.indexCount = (UINT)m_indices.size();
 		header.groupCount = (UINT)m_groups.size();
-		header.materialCount = (UINT)m_textureNames.size();
+		header.materialCount = (UINT)m_textures.size();
 		header.boundingVolumePrimitive = m_boundingVolumeType;
 		header.hitboxTriangleCount = (UINT)m_hitbox.size();
 		header.boneCount = 0;
@@ -83,11 +83,11 @@ namespace gfx
 		{
 			WCHAR nul = 0;
 			if (ModelType::HasTexture(header.modelType))
-				outfile.write((char*)m_textureNames[i].c_str(), (m_textureNames[i].length() + 1) * sizeof(WCHAR));
+				outfile.write((char*)m_textures[i].filename.c_str(), (m_textures[i].filename.length() + 1) * sizeof(WCHAR));
 			else
 				outfile.write((char*)& nul, sizeof(WCHAR));
 			if (ModelType::HasNormalmap(header.modelType))
-				outfile.write((char*)m_normalmapNames[i].c_str(), (m_normalmapNames[i].length() + 1) * sizeof(WCHAR));
+				outfile.write((char*)m_normalmaps[i].filename.c_str(), (m_normalmaps[i].filename.length() + 1) * sizeof(WCHAR));
 			else
 				outfile.write((char*)& nul, sizeof(WCHAR));
 		}
@@ -130,7 +130,7 @@ namespace gfx
 		header.vertexCount = (UINT)m_vertices.size() / (m_vertexSizeInBytes / sizeof(VertexElement));
 		header.indexCount = (UINT)m_indices.size();
 		header.groupCount = (UINT)m_groups.size();
-		header.materialCount = (UINT)m_textureNames.size();
+		header.materialCount = (UINT)m_textures.size();
 		header.boundingVolumePrimitive = m_boundingVolumeType;
 		header.hitboxTriangleCount = (UINT)m_hitbox.size();
 		header.boneCount = 0;
@@ -246,11 +246,11 @@ namespace gfx
 			outfile << L"New material" << std::endl;
 			outfile << L"\tTexture name: ";
 			if (ModelType::HasTexture(header.modelType))
-				outfile << m_textureNames[i];
+				outfile << m_textures[i].filename;
 			outfile << std::endl;
 			outfile << L"\tNormalmap name: ";
 			if (ModelType::HasNormalmap(header.modelType))
-				outfile << m_normalmapNames[i];
+				outfile << m_normalmaps[i].filename;
 			outfile << std::endl;
 		}
 	}

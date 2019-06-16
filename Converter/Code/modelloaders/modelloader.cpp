@@ -7,15 +7,15 @@ namespace gfx
 {
 	void ModelLoader::OrganizeMaterials()
 	{
-		std::vector<std::wstring> textureNames, normalmapNames;
+		std::vector<TextureToLoad> textureNames, normalmapNames;
 		for (UINT i = 0; i < (UINT)m_groups.size(); i++)
 		{
-			textureNames.push_back(m_textureNames[m_groups[i].materialIndex]);
-			normalmapNames.push_back(m_normalmapNames[m_groups[i].materialIndex]);
+			textureNames.push_back(m_textures[m_groups[i].materialIndex]);
+			normalmapNames.push_back(m_normalmaps[m_groups[i].materialIndex]);
 			m_groups[i].materialIndex = i;
 		}
-		m_textureNames.swap(textureNames);
-		m_normalmapNames.swap(normalmapNames);
+		m_textures.swap(textureNames);
+		m_normalmaps.swap(normalmapNames);
 	}
 
 	void ModelLoader::Create(Vertex_PTMB vertices[], UINT vertexCount, UINT indices[], UINT indexCount, UINT modelType)
@@ -68,8 +68,8 @@ namespace gfx
 		for (UINT i = 0; i < indexCount; i++)
 			m_indices[i] = indices[i];
 		m_groups.push_back({ 0, indexCount, 0 });
-		m_textureNames.push_back(L"");
-		m_normalmapNames.push_back(L"");
+		m_textures.push_back(TextureToLoad());
+		m_normalmaps.push_back(TextureToLoad());
 	}
 
 	ModelLoader::ModelLoader() :
@@ -93,8 +93,8 @@ namespace gfx
 		m_boundingVolumeType = 0;
 		m_vertices.clear();
 		m_indices.clear();
-		m_textureNames.clear();
-		m_normalmapNames.clear();
+		m_textures.clear();
+		m_normalmaps.clear();
 		m_groups.clear();
 		m_bvPosition = mth::float3();
 		m_bvCuboidSize = mth::float3();
@@ -278,10 +278,10 @@ namespace gfx
 			m_indices[i] = i;
 		m_groups.clear();
 		m_groups.push_back({ 0, (UINT)m_indices.size() , 0 });
-		m_textureNames.clear();
-		m_textureNames.push_back(L"");
-		m_normalmapNames.clear();
-		m_normalmapNames.push_back(L"");
+		m_textures.clear();
+		m_textures.push_back(TextureToLoad());
+		m_normalmaps.clear();
+		m_normalmaps.push_back(TextureToLoad());
 	}
 
 	bool ModelLoader::HasHitbox()
@@ -392,5 +392,25 @@ namespace gfx
 				m_vertices[i * vertexSize + offset2 + 2] = v.z;
 			}
 		}
+	}
+	TextureToLoad::TextureToLoad() :
+		filename(),
+		width(0),
+		height(0),
+		data(),
+		loaded(false) {}
+	TextureToLoad::TextureToLoad(const wchar_t* str) :
+		filename(str),
+		width(0),
+		height(0),
+		data(),
+		loaded(false) {}
+	void TextureToLoad::Clear()
+	{
+		filename.clear();
+		width = 0;
+		height = 0;
+		data.clear();
+		loaded = false;
 	}
 }

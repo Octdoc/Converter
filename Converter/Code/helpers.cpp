@@ -3,7 +3,7 @@
 
 std::wstring g_ExeFolder;
 
-std::wstring ToWStr(const char *str)
+std::wstring ToWStr(const char* str)
 {
 	std::wstring r;
 	for (int i = 0; str[i]; i++)
@@ -11,7 +11,7 @@ std::wstring ToWStr(const char *str)
 	return r;
 }
 
-std::string ToStr(const wchar_t *str)
+std::string ToStr(const wchar_t* str)
 {
 	std::string r;
 	for (int i = 0; str[i]; i++)
@@ -37,4 +37,18 @@ std::wstring ResolveFilename(std::wstring filename)
 	if (std::experimental::filesystem::exists(g_ExeFolder + filename))
 		return g_ExeFolder + filename;
 	return filename;
+}
+
+std::wstring GetFileExtension(LPCWSTR filename)
+{
+	std::wstring extension;
+	int lastDotIndex = -1;
+	for (int i = 0; filename[i]; i++)
+		if (filename[i] == '.')
+			lastDotIndex = i;
+
+	if (lastDotIndex != -1)
+		for (int i = lastDotIndex + 1; filename[i] != '\0' && filename[i] != '\"'; i++)
+			extension += filename[i];
+	return extension;
 }

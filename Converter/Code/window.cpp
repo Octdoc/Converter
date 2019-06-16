@@ -53,6 +53,7 @@ namespace cvt
 			isCheckBoxChecked(m_cbNormalmap),
 			isCheckBoxChecked(m_cbBone),
 			true, true);
+		modelType = 0xffff;
 		m_modelLoader.Clear();
 		m_modelLoader.LoadModel(filename, modelType);
 		if (m_modelLoader.HasHitbox())

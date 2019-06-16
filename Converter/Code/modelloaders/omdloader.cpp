@@ -128,22 +128,22 @@ namespace gfx
 	void OMDLoader::ReadMaterialsBinary(std::ifstream& infile, OMDHeader& header)
 	{
 		WCHAR ch;
-		m_textureNames.resize(header.materialCount);
-		m_normalmapNames.resize(header.materialCount);
+		m_textures.resize(header.materialCount);
+		m_normalmaps.resize(header.materialCount);
 		for (UINT i = 0; i < header.materialCount; i++)
 		{
 			infile.read((char*)& ch, sizeof(WCHAR));
 			while (ch)
 			{
 				if (ModelType::HasTexture(m_modelType))
-					m_textureNames[i] += ch;
+					m_textures[i].filename += ch;
 				infile.read((char*)& ch, sizeof(WCHAR));
 			}
 			infile.read((char*)& ch, sizeof(WCHAR));
 			while (ch)
 			{
 				if (ModelType::HasNormalmap(m_modelType))
-					m_normalmapNames[i] += ch;
+					m_normalmaps[i].filename += ch;
 				infile.read((char*)& ch, sizeof(WCHAR));
 			}
 		}
@@ -340,18 +340,18 @@ namespace gfx
 	{
 		WCHAR ch;
 		do { infile >> ch; } while (ch != ':');
-		m_textureNames.resize(header.materialCount);
-		m_normalmapNames.resize(header.materialCount);
+		m_textures.resize(header.materialCount);
+		m_normalmaps.resize(header.materialCount);
 		for (UINT i = 0; i < header.materialCount; i++)
 		{
 			do { infile >> ch; } while (ch != ':');
 			do { infile.read(&ch, 1); } while (ch == ' ');
 			for (; ch != '\n'; infile.read(&ch, 1))
-				m_textureNames[i] += ch;
+				m_textures[i].filename += ch;
 			do { infile >> ch; } while (ch != ':');
 			do { infile.read(&ch, 1); } while (ch == ' ');
 			for (; ch != '\n'; infile.read(&ch, 1))
-				m_normalmapNames[i] += ch;
+				m_normalmaps[i].filename += ch;
 		}
 	}
 	void OMDLoader::ReadHitboxText(std::wifstream& infile, OMDHeader& header)
