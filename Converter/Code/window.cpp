@@ -170,17 +170,16 @@ namespace cvt
 		SetCheckBox(m_cbShowHitbox, true);
 
 		if (args.empty())
-			m_scene->SetEntityDefaultCube();
+			m_scene->SetEntityDefaultCube(m_modelLoader);
 		else
 		{
 			try
 			{
-				m_modelLoader.LoadModel(args[0].c_str());
-				m_scene->SetEntity(m_modelLoader);
+				SetModel(args[0].c_str());
 			}
 			catch (std::exception e)
 			{
-				m_scene->SetEntityDefaultCube();
+				m_scene->SetEntityDefaultCube(m_modelLoader);
 				MessageBoxA(NULL, e.what(), "Error", MB_OK);
 			}
 		}

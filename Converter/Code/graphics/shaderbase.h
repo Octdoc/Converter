@@ -6,6 +6,7 @@
 namespace gfx
 {
 	AutoReleasePtr<ID3DBlob> LoadShaderCode(LPCWSTR filename);
+	AutoReleasePtr<ID3DBlob> CompileShader(std::string& shaderCode, const char* entry, const char* target, const wchar_t* errorOutputFile = nullptr);
 
 	struct VertexGroup
 	{

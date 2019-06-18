@@ -1,20 +1,18 @@
 #include "vertexshader.h"
+#include <fstream>
 
 namespace gfx
 {
-	VertexShader::VertexShader(Graphics& graphics, LPCWSTR shaderFileName, UINT modelType) :
-		m_modelType(modelType)
+	void VertexShader::CreateVertexShader(Graphics& graphics, ID3DBlob* shaderBuffer)
 	{
-		auto device = graphics.getDevice();
-		AutoReleasePtr<ID3DBlob> shaderBuffer = LoadShaderCode(shaderFileName); 
-		HRESULT hr;
-		int counter = 0;
-		D3D11_INPUT_ELEMENT_DESC inputLayoutDesc[7];
-
-		hr = device->CreateVertexShader(shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(), nullptr, &m_vertexShader);
+		HRESULT hr = graphics.getDevice()->CreateVertexShader(shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(), nullptr, &m_vertexShader);
 		if (FAILED(hr))
 			throw std::exception("Failed to create vertex shader.");
-		
+	}
+	void VertexShader::CreateInputLayout(Graphics& graphics, ID3DBlob* shaderBuffer)
+	{
+		int counter = 0;
+		D3D11_INPUT_ELEMENT_DESC inputLayoutDesc[7];
 		if (ModelType::HasPositions(m_modelType))
 			inputLayoutDesc[counter++] = { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 };
 		if (ModelType::HasTexcoords(m_modelType))
@@ -32,10 +30,63 @@ namespace gfx
 			inputLayoutDesc[counter++] = { "BONEINDEX", 0, DXGI_FORMAT_R32G32B32A32_UINT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
 		}
 
-		hr = device->CreateInputLayout(inputLayoutDesc, counter,
+		HRESULT hr = graphics.getDevice()->CreateInputLayout(inputLayoutDesc, counter,
 			shaderBuffer->GetBufferPointer(), shaderBuffer->GetBufferSize(), &m_inputLayout);
 		if (FAILED(hr))
 			throw std::exception("Failed to create input layout.");
+	}
+	VertexShader::VertexShader(Graphics& graphics, LPCWSTR shaderFileName, UINT modelType) :
+		m_modelType(modelType)
+	{
+		AutoReleasePtr<ID3DBlob> shaderBuffer = LoadShaderCode(shaderFileName);
+
+		CreateVertexShader(graphics, shaderBuffer);
+		CreateInputLayout(graphics, shaderBuffer);
+	}
+
+	VertexShader::VertexShader(Graphics& graphics, UINT modelType) :
+		m_modelType(modelType)
+	{
+		std::string shaderCode;
+		shaderCode.reserve(1024);
+		shaderCode += "cbuffer MatrixBuffer{matrix worldMatrix;matrix cameraMatrix;};struct VertexInputType{";
+		if (ModelType::HasPositions(modelType))
+			shaderCode += "float3 position:POSITION;";
+		if (ModelType::HasTexcoords(modelType))
+			shaderCode += "float2 tex:TEXCOORD;";
+		if (ModelType::HasNormals(modelType))
+			shaderCode += "float3 normal:NORMAL;";
+		if (ModelType::HasTangentsBinormals(modelType))
+			shaderCode += "float3 tangent:TANGENT;float3 binormal:BINORMAL;";
+		shaderCode += "};struct PixelInputType{";
+		if (ModelType::HasPositions(modelType))
+			shaderCode += "float4 position:SV_POSITION;";
+		if (ModelType::HasNormals(modelType))
+			shaderCode += "float3 pos:POSITION;";
+		if (ModelType::HasTexcoords(modelType))
+			shaderCode += "float2 tex:TEXCOORD;";
+		if (ModelType::HasNormals(modelType))
+			shaderCode += "float3 normal:NORMAL;";
+		if (ModelType::HasTangentsBinormals(modelType))
+			shaderCode += "float3 tangent:TANGENT;float3 binormal:BINORMAL;";
+		shaderCode += "};PixelInputType main(VertexInputType input){PixelInputType output;";
+		if (ModelType::HasPositions(modelType))
+			shaderCode += "output.position=mul(float4(input.position,1),worldMatrix);";
+		if (ModelType::HasNormals(modelType))
+			shaderCode += "output.pos=output.position.xyz;";
+		if (ModelType::HasPositions(modelType))
+			shaderCode += "output.position=mul(output.position,cameraMatrix);";
+		if (ModelType::HasTexcoords(modelType))
+			shaderCode += "output.tex=input.tex;";
+		if (ModelType::HasNormals(modelType))
+			shaderCode += "output.normal=mul(input.normal,(float3x3)worldMatrix);";
+		if (ModelType::HasTangentsBinormals(modelType))
+			shaderCode += "output.tangent=mul(input.tangent,(float3x3)worldMatrix);output.binormal=mul(input.binormal,(float3x3)worldMatrix);";
+		shaderCode += "return output;}";
+
+		AutoReleasePtr<ID3DBlob> shaderBuffer = CompileShader(shaderCode, "main", "vs_5_0", L"shadererror.txt");
+		CreateVertexShader(graphics, shaderBuffer);
+		CreateInputLayout(graphics, shaderBuffer);
 	}
 
 	void VertexShader::SetShaderToRender(Graphics& graphics)

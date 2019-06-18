@@ -197,6 +197,83 @@ namespace gfx
 	{
 		CreateTexture(graphics, data, width, height);
 	}
+	Texture::P Texture::CreateTestTexture(Graphics& graphics)
+	{
+		unsigned r = 0xff0000ff;
+		unsigned g = 0xff00ff00;
+		unsigned b = 0xffff0000;
+		unsigned k = 0xff000000;
+		unsigned pixels[16][16];
+		memset(pixels, 0xff, sizeof(pixels));
+		for (int i = 0; i < 16; i++)
+		{
+			pixels[0][i] = k;
+			pixels[0][i] = k;
+			pixels[0][i] = k;
+			pixels[15][i] = k;
+			pixels[15][i] = k;
+			pixels[15][i] = k;
+			pixels[i][0] = k;
+			pixels[i][0] = k;
+			pixels[i][0] = k;
+			pixels[i][15] = k;
+			pixels[i][15] = k;
+			pixels[i][15] = k;
+			pixels[1][i] = k;
+			pixels[1][i] = k;
+			pixels[1][i] = k;
+			pixels[14][i] = k;
+			pixels[14][i] = k;
+			pixels[14][i] = k;
+			pixels[i][1] = k;
+			pixels[i][1] = k;
+			pixels[i][1] = k;
+			pixels[i][14] = k;
+			pixels[i][14] = k;
+			pixels[i][14] = k;
+		}
+		{
+			pixels[2][2] = r;
+			pixels[3][2] = r;
+			pixels[4][2] = r;
+			pixels[5][2] = r;
+			pixels[6][2] = r;
+			pixels[2][3] = r;
+			pixels[2][4] = r;
+			pixels[4][3] = r;
+			pixels[4][4] = r;
+			pixels[3][5] = r;
+			pixels[5][5] = r;
+			pixels[6][5] = r;
+		}
+		{
+			pixels[6][7] = g;
+			pixels[6][8] = g;
+			pixels[7][6] = g;
+			pixels[8][6] = g;
+			pixels[9][6] = g;
+			pixels[10][7] = g;
+			pixels[10][8] = g;
+			pixels[10][9] = g;
+			pixels[9][9] = g;
+		}
+		{
+			pixels[9][10] = b;
+			pixels[9][11] = b;
+			pixels[9][12] = b;
+			pixels[10][10] = b;
+			pixels[10][13] = b;
+			pixels[11][10] = b;
+			pixels[11][11] = b;
+			pixels[11][12] = b;
+			pixels[12][10] = b;
+			pixels[12][13] = b;
+			pixels[13][10] = b;
+			pixels[13][11] = b;
+			pixels[13][12] = b;
+		}
+		return std::make_shared<Texture>(graphics, pixels, 16, 16);
+	}
 	void Texture::SetTextureToRender(Graphics& graphics, UINT index)
 	{
 		graphics.getContext()->PSSetShaderResources(index, 1, &m_shaderResourceView);

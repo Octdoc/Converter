@@ -22,6 +22,20 @@ namespace gfx
 		return shaderCode;
 	}
 
+	AutoReleasePtr<ID3DBlob> CompileShader(std::string& shaderCode, const char* entry, const char* target, const wchar_t* errorOutputFile)
+	{
+		AutoReleasePtr<ID3DBlob> shaderBuffer;
+		AutoReleasePtr<ID3DBlob> errorMessage;
+		HRESULT hr = D3DCompile(shaderCode.c_str(), shaderCode.length(), nullptr, nullptr, nullptr, entry, target, D3D10_SHADER_ENABLE_STRICTNESS, 0, &shaderBuffer, errorOutputFile ? &errorMessage : nullptr);
+		if (FAILED(hr))
+		{
+			std::ofstream of(errorOutputFile);
+			of.write((char*)errorMessage->GetBufferPointer(), errorMessage->GetBufferSize());
+			throw std::exception("Failed to compile shader.");
+		}
+		return shaderBuffer;
+	}
+
 #pragma region VertexElement
 
 	float VertexElement::operator=(float n)
@@ -135,18 +149,18 @@ namespace gfx
 		}
 		UINT RemoveUnnecessary(UINT modelType)
 		{
-			if (!(modelType & Part::POSITION))
+			if (!HasPositions(modelType))
 				return 0;
-			if (!(modelType & Part::TEXCOORD))
-				modelType &= ~(Part::TEXTURE | Part::NORMALMAP);
-			if (!(modelType & Part::NORMAL))
+			if (!HasTexcoords(modelType))
+				modelType &= ~(Part::TEXTURE | Part::NORMALMAP | Part::TANGENT_BINORMAL);
+			if (!HasNormals(modelType))
 				modelType &= ~(Part::TANGENT_BINORMAL | Part::NORMALMAP);
-			if (!(modelType & Part::TANGENT_BINORMAL))
+			if (!HasTangentsBinormals(modelType))
 				modelType &= ~Part::NORMALMAP;
-			if (!(modelType & Part::NORMALMAP))
+			if (!HasNormalmap(modelType))
 			{
 				modelType &= ~Part::TANGENT_BINORMAL;
-				if (!Part::TEXTURE)
+				if (!HasTexture(modelType))
 					modelType &= ~Part::TEXCOORD;
 			}
 			return modelType;

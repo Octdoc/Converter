@@ -29,24 +29,43 @@ namespace cvt
 		m_camController(m_cam),
 		m_showHitbox(true)
 	{
-		m_vs[0] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, ResolveFilename(L"Shaders/vsP.cso").c_str(), gfx::ModelType::P));
-		m_ps[0] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, ResolveFilename(L"Shaders/psP.cso").c_str()));
-		m_vs[1] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, ResolveFilename(L"Shaders/vsPT.cso").c_str(), gfx::ModelType::PT));
-		m_ps[1] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, ResolveFilename(L"Shaders/psPT.cso").c_str()));
-		m_vs[2] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, ResolveFilename(L"Shaders/vsPN.cso").c_str(), gfx::ModelType::PN));
-		m_ps[2] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, ResolveFilename(L"Shaders/psPN.cso").c_str()));
-		m_vs[3] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, ResolveFilename(L"Shaders/vsPTN.cso").c_str(), gfx::ModelType::PTN));
-		m_ps[3] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, ResolveFilename(L"Shaders/psPTN.cso").c_str()));
-		m_vs[4] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, ResolveFilename(L"Shaders/vsPM.cso").c_str(), gfx::ModelType::PM));
-		m_ps[4] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, ResolveFilename(L"Shaders/psPM.cso").c_str()));
-		m_vs[5] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, ResolveFilename(L"Shaders/vsPTM.cso").c_str(), gfx::ModelType::PTM));
-		m_ps[5] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, ResolveFilename(L"Shaders/psPTM.cso").c_str()));
+		m_ps[0] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, gfx::ModelType::P));
+		m_ps[1] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, gfx::ModelType::PT));
+		m_ps[2] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, gfx::ModelType::PN));
+		m_ps[3] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, gfx::ModelType::PTN));
+		m_ps[4] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, gfx::ModelType::PM));
+		m_ps[5] = gfx::PixelShader::U(new gfx::PixelShader(m_graphics, gfx::ModelType::PTM));
+		m_vs[0] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, gfx::ModelType::P));
+		m_vs[1] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, gfx::ModelType::PT));
+		m_vs[2] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, gfx::ModelType::PN));
+		m_vs[3] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, gfx::ModelType::PTN));
+		m_vs[4] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, gfx::ModelType::PM));
+		m_vs[5] = gfx::VertexShader::U(new gfx::VertexShader(m_graphics, gfx::ModelType::PTM));
 		m_matrixBuffer = gfx::CBuffer::U(new gfx::CBuffer(m_graphics, sizeof(mth::matrix) * 2));
 		m_lightBuffer = gfx::CBuffer::U(new gfx::CBuffer(m_graphics, sizeof(float) * 8));
 		m_colorBuffer = gfx::CBuffer::U(new gfx::CBuffer(m_graphics, sizeof(float) * 4));
 		m_sampler = gfx::SamplerState::U(new gfx::SamplerState(m_graphics));
-		m_defaultTexture = std::make_shared<gfx::Texture>(m_graphics, ResolveFilename(L"Media/missing.png").c_str());
-		m_defaultNormalmap = std::make_shared<gfx::Texture>(m_graphics, ResolveFilename(L"Media/normal.png").c_str());
+
+		unsigned char img[16 * 16 * 4];
+		for (int x = 0; x < 16; x++)
+			for (int y = 0; y < 16; y++)
+			{
+				unsigned char c = ((x & 8) ^ (y & 8)) ? 0 : 255;
+				img[(x + y * 16) * 4 + 0] = c;
+				img[(x + y * 16) * 4 + 1] = 0;
+				img[(x + y * 16) * 4 + 2] = c;
+				img[(x + y * 16) * 4 + 3] = 255;
+			}
+		m_defaultTexture = std::make_shared<gfx::Texture>(m_graphics, img, 16, 16);
+		for (int x = 0; x < 16; x++)
+			for (int y = 0; y < 16; y++)
+			{
+				img[(x + y * 16) * 4 + 0] = 127;
+				img[(x + y * 16) * 4 + 1] = 127;
+				img[(x + y * 16) * 4 + 2] = 255;
+				img[(x + y * 16) * 4 + 3] = 255;
+			}
+		m_defaultNormalmap = std::make_shared<gfx::Texture>(m_graphics, img, 16, 16);
 
 		m_cam.SetScreenAspect(1000.0f / 720.0f);
 		m_camController.SetTargetPosition();
@@ -57,9 +76,8 @@ namespace cvt
 		m_sampler->SetSamplerState(m_graphics);
 	}
 
-	void Scene::SetEntityDefaultCube()
+	void Scene::SetEntityDefaultCube(gfx::ModelLoader& ml)
 	{
-		gfx::ModelLoader ml;
 		ml.CreateCube(-1.0f, 2.0f, gfx::ModelType::PTN);
 		gfx::Model::P model = std::make_shared<gfx::Model>(m_graphics, ml);
 		int shaderIndex = ModelTypeToIndex(ml.getModelType());
@@ -147,6 +165,7 @@ namespace cvt
 						}
 						catch (std::exception e)
 						{
+							MessageBox(m_graphics.getHWND(), ToWStr(e.what()).c_str(), L"Error", MB_OK);
 							tex = m_defaultTexture;
 						}
 						textures[t.filename] = tex;
@@ -156,6 +175,8 @@ namespace cvt
 						tex = textures[t.filename];
 					}
 				}
+				else
+					tex = m_defaultTexture;
 			}
 			if (n.loaded)
 			{
@@ -173,6 +194,7 @@ namespace cvt
 						}
 						catch (std::exception e)
 						{
+							MessageBox(m_graphics.getHWND(), ToWStr(e.what()).c_str(), L"Error", MB_OK);
 							norm = m_defaultNormalmap;
 						}
 						textures[n.filename] = norm;
@@ -182,6 +204,8 @@ namespace cvt
 						norm = textures[n.filename];
 					}
 				}
+				else
+					norm = m_defaultNormalmap;
 			}
 			allMaterials[i] = std::make_shared<gfx::Material>(vs, ps, tex, norm);
 		}

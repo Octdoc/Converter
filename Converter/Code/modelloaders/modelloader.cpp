@@ -182,6 +182,7 @@ namespace gfx
 			0, 2, 1, 0, 3, 2, 4, 6, 5, 4, 7, 6, 8, 10, 9, 8, 11, 10, 12, 14, 13, 12, 15, 14, 16, 18, 17, 16, 19, 18, 20, 22, 21, 20, 23, 22
 		};
 		Create(vertices, sizeof(vertices) / sizeof(vertices[0]), indices, sizeof(indices) / sizeof(indices[0]), modelType);
+		m_filename = L"cube";
 	}
 
 	void ModelLoader::CreateFullScreenQuad()

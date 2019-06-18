@@ -20,6 +20,7 @@ namespace gfx
 	public:
 		Texture(Graphics& graphics, LPCWSTR filename);
 		Texture(Graphics& graphics, void* data, int width, int height);
+		static Texture::P CreateTestTexture(Graphics& graphics);
 
 		void SetTextureToRender(Graphics& graphics, UINT index = 0);
 	};

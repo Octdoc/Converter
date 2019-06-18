@@ -25,9 +25,6 @@
     <Filter Include="Source Files\math">
       <UniqueIdentifier>{2ab5e291-25e9-4e27-859b-e22c2ee4ed55}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders">
-      <UniqueIdentifier>{21225982-c9e9-4706-bdd6-0a4f673535a1}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\modelloaders">
       <UniqueIdentifier>{bb3c7330-f77d-47bb-9887-8b4e70a4774f}</UniqueIdentifier>
     </Filter>
@@ -185,43 +182,5 @@
     <ClInclude Include="Code\modelloaders\omdexporter.h">
       <Filter>Header Files\modelloaders</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="Code\Shaders\psP.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Code\Shaders\psPM.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Code\Shaders\psPN.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Code\Shaders\psPT.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Code\Shaders\psPTM.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Code\Shaders\psPTN.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Code\Shaders\vsP.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Code\Shaders\vsPM.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Code\Shaders\vsPN.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Code\Shaders\vsPT.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Code\Shaders\vsPTM.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-    <FxCompile Include="Code\Shaders\vsPTN.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
   </ItemGroup>
 </Project>

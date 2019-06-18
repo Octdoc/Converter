@@ -33,7 +33,7 @@ namespace cvt
 	public:
 		Scene(gfx::Graphics& graphics);
 
-		void SetEntityDefaultCube();
+		void SetEntityDefaultCube(gfx::ModelLoader& ml);
 		void SetEntity(gfx::ModelLoader& ml);
 		void ClearEntity();
 		void SetHitbox(gfx::ModelLoader& ml);
